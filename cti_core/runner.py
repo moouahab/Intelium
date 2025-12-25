@@ -1,5 +1,3 @@
-import sys
-
 from cti_core.config_model import ConfigModel
 from cti_core.scraper import Scraper
 from tools.load_config import get_config_as_json_string
@@ -23,6 +21,17 @@ def run(config_path: str = "config/conf.yaml", force_ai_report: bool | None = No
         return
 
     logger = setup_logger(config_model.yaml_config.get("logging", {}))
+
+    if config_model.has_warnings():
+        for warning in config_model.warnings:
+            logger.warning("Avertissement configuration : %s", warning)
+
+    if config_model.has_errors():
+        for error in config_model.errors:
+            logger.error("Erreur configuration : %s", error)
+        logger.error("Arrêt du run : configuration invalide.")
+        return
+
     json_config_str = get_config_as_json_string(config_model.yaml_config)
     logger.info("✅ Config chargée.")
     logger.debug(json_config_str)

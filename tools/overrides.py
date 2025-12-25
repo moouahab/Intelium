@@ -24,6 +24,7 @@ def normalize_overrides(raw: Optional[dict]) -> dict:
     - crawl_delay_seconds (int)
     - headers (dict de str)
     - user_agent (str)
+    - headless (bool)
     """
     if not isinstance(raw, dict):
         return {}
@@ -54,6 +55,9 @@ def normalize_overrides(raw: Optional[dict]) -> dict:
         overrides.pop("user_agent", None)
     else:
         overrides["user_agent"] = user_agent.strip()
+
+    if "headless" in overrides:
+        overrides["headless"] = _to_bool(overrides.get("headless"))
 
     return overrides
 

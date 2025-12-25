@@ -232,3 +232,6 @@ id_rsa.pub
 id_ed25519
 id_ed25519.pub
 .ssh/
+
+# Project-specific secrets
+config/auth.yaml

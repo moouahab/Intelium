@@ -60,9 +60,16 @@ Créer un agent intelligent capable de :
   - `config/conf.yaml` inclut `sources.yaml`, `scraping.yaml`, etc.
   - `config/network.yaml` : HTTPS, block_private, allowlist, max_bytes, dossier de sauvegarde.
   - `config/crawler.yaml` : profondeur, max pages, same_domain_only, allow_domains, respect_robots, crawl_delay_seconds, max_concurrent, url_normalizer.
-  - `config/auth.yaml` : headers globaux + `hosts` par domaine (ne pas committer les secrets).
-  - `config/output.yaml` : rapport markdown/json, split, IA (`ai_report` activé par défaut, commande auto-détectée si vide, prompt_template ou prompt_path).
+  - `config/auth.yaml` : headers globaux + `hosts` par domaine (ne pas committer les secrets, support `${ENV_VAR}` pour injecter depuis l'environnement).
+  - `config/output.yaml` : rapport markdown/json, split, IA (`ai_report` activé en mode LangGraph avec LLM local par défaut, exemple `codex exec --skip-git-repo-check`, prompt_template ou prompt_path, option `prompt_via_file` pour éviter les prompts trop longs).
   - `config/prompt.yaml` : template de prompt IA réutilisable.
+
+### Garde-fous réseau
+- `network.enforce_https`, `block_private`, `allow_domains` pour limiter les cibles.
+- `network.max_bytes` pour couper les gros téléchargements.
+- Robots.txt respecté par défaut (`crawler.respect_robots`) et délai configurable (`crawl_delay_seconds`).
+- Pensez à restreindre les domaines si vous désactivez robots ou élargissez l'allowlist.
+- Headers sensibles : les valeurs `Authorization`/`*token*`/`api-key` sont masquées dans les logs.
 
 ## 🔐 Chiffrement (tools/crypter.py)
 - Hachage : `compute_sha256(path)`, `compute_sha256_from_text(str)`, `verify_file_integrity(path, hash)`.

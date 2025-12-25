@@ -1,16 +1,15 @@
 output:
   ai_report:
-    enabled: true             # activé par défaut, essaie de détecter un LLM local si command est vide
-    command: "codex exec --skip-git-repo-check -"        # commande codex en mode non interactif (prompt depuis stdin)
+    enabled: true
+    mode: langgraph           # utilise LangGraphRunner avec un LLM CLI local
+    langgraph_llm_command: "codex exec --skip-git-repo-check -"  # codex en mode non interactif (prompt via stdin)
+    command: "codex exec --skip-git-repo-check -"  # fallback CLI si LangGraph indisponible
     output: reports/ai_report.md
     timeout: 400
     prompt_template: ""       # optionnel, utilise {results_json} pour insérer les données
     prompt_path: config/prompt.yaml   # template CTI par défaut
-    pass_prompt_as_arg: false # on force le passage par stdin
+    pass_prompt_as_arg: false # on force le passage du prompt par stdin pour codex exec
+    prompt_via_file: true     # évite les prompts trop longs en argument
   format: markdown
   file: reports/threat_intel_report.md
   split_per_source: true
-  detail_dir: reports/sources
-  language: fr
-  include_source: true
-  include_timestamp: true

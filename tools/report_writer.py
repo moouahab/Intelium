@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 import json
 import re
+from tools.report_sections import build_markdown_section, build_json_entry
 
 
 def _slugify(value: str) -> str:
@@ -32,28 +33,13 @@ class ReportWriter:
         extracted_limit: int | None = None,
         include_keywords: bool = True,
     ) -> List[str]:
-        lines = [f"{heading_prefix} {res.get('name') or res.get('url')}"]
-        lines.append(f"- Type : {res.get('type')}")
-        lines.append(f"- Statut : {res.get('status')}")
-        if res.get("error"):
-            lines.append(f"- Erreur : {res.get('error')}")
-        if res.get("saved_path"):
-            lines.append(f"- Fichier : {res.get('saved_path')}")
-        if detail_path:
-            lines.append(f"- Détail : {detail_path}")
-        extracted = res.get("extracted") or []
-        if extracted and extracted_limit != 0:
-            lines.append("- Extraits :")
-            limit = extracted_limit if extracted_limit is not None else len(extracted)
-            for item in extracted[:limit]:
-                lines.append(f"  - {item}")
-        keywords = res.get("keywords") or {}
-        if keywords and include_keywords:
-            lines.append("- Mots-clés :")
-            for category, words in keywords.items():
-                lines.append(f"  - {category}: {', '.join(words)}")
-        lines.append("")
-        return lines
+        return build_markdown_section(
+            res,
+            heading_prefix=heading_prefix,
+            detail_path=detail_path,
+            extracted_limit=extracted_limit,
+            include_keywords=include_keywords,
+        )
 
     def _write_markdown_detail(self, res: Dict[str, Any], path: Path):
         lines = self._markdown_block(res, heading_prefix="#", extracted_limit=None, include_keywords=True)
@@ -79,10 +65,7 @@ class ReportWriter:
     def _write_json_main(self, results: List[Dict[str, Any]]) -> Path:
         payload = {"sources": [], "lang": self.language}
         for res in results:
-            entry = dict(res)
-            detail_path = self._handle_detail(res)
-            if detail_path:
-                entry["detail_path"] = detail_path
+            entry = build_json_entry(res, detail_path=self._handle_detail(res))
             payload["sources"].append(entry)
         self.file_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2))
         return self.file_path

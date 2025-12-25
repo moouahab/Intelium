@@ -61,14 +61,4 @@ def validate_output(output_conf: dict) -> List[str]:
         if prompt_path:
             if not Path(prompt_path).exists():
                 errors.append(f"output.ai_report.prompt_path introuvable: {prompt_path}")
-    # Vérification des chemins de rapport
-    main_path = output_conf.get("file")
-    if main_path:
-        base_dir = Path(main_path).parent
-        if not base_dir.exists():
-            errors.append(f"Répertoire du rapport principal introuvable: {base_dir}")
-    detail_dir = output_conf.get("detail_dir")
-    if detail_dir:
-        if not Path(detail_dir).exists():
-            errors.append(f"Répertoire detail_dir introuvable: {detail_dir}")
     return errors

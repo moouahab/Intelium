@@ -64,18 +64,18 @@
 
 ## Configs clés
 - `config/sources.yaml` : sources CTI (CERT-FR, CISA KEV, RSS Talos/NCSC/HackerNews/SecurityWeek, CVE sample, OTX).
-- `config/network.yaml` : HTTPS, block_private, allow_domains, max_bytes, timeout, dossier de sauvegarde.
+- `config/network.yaml` : HTTPS, block_private, allow_domains, max_bytes, timeout, dossier de sauvegarde. Garde-fous : enforce_https + blocage réseau privé, allowlist stricte, robots.txt respecté par défaut.
 - `config/crawler.yaml` : `max_depth`, `max_pages`, `same_domain_only`, `allow_domains` (fallback sur réseau), `respect_robots`, `crawl_delay_seconds`, `max_concurrent`.
 - `config/scraping.yaml` : règles d’extraction par type (HTML tags, API JSONPath, XML tags, PDF/CSV/image/TXT options).
 - `config/cache.yaml` : fichier cache, auto_save, `per_site` (fichiers par domaine).
 - `config/logging.yaml` : niveau, fichier log (rotation), console.
-- `config/output.yaml` : format rapport, chemin principal, split_per_source/detail_dir, langue. Bloc `ai_report` activé par défaut : `enabled`, `command` (ex: `ollama run llama3` ou auto-détection si vide), `output`, `timeout`, `prompt_template` (texte où `{results_json}` est remplacé par les données) ou `prompt_path` pour lire un template depuis un fichier, `pass_prompt_as_arg` (True si votre CLI IA ne lit pas stdin et exige le prompt en argument). Auto-détection couvre : ollama, llama/llama.cpp, codex, copilot, code.
+- `config/output.yaml` : format rapport, chemin principal, split_per_source/detail_dir, langue. Bloc `ai_report` activé par défaut en mode LangGraph : `mode`, `langgraph_llm_command` (ex: `codex exec --skip-git-repo-check` ou autre CLI locale), `command` (fallback CLI), `output`, `timeout`, `prompt_template` (texte où `{results_json}` est remplacé par les données) ou `prompt_path` pour lire un template depuis un fichier, `pass_prompt_as_arg` et `prompt_via_file` (pour passer le prompt via stdin/fichier). Auto-détection couvre : ollama, llama/llama.cpp, codex, copilot, code.
 - Overrides par source (via `sources.yaml`) : bloc `overrides` pour `max_bytes`, `respect_robots`, `crawl_delay_seconds` (voir normalisation dans `sources_factory.normalize_overrides`).
 - Normalisation URL : `crawler.url_normalizer` (`strip` par défaut, options `lower`, `strip-lower`).
 
 ## auth.yaml (options)
-- `authentication.headers` : headers globaux (ex: User-Agent)
-- `authentication.hosts.<domaine>` : headers spécifiques (ex: Authorization)
+- `authentication.headers` : headers globaux (ex: User-Agent), support `${ENV_VAR}` (headers sensibles masqués dans les logs)
+- `authentication.hosts.<domaine>` : headers spécifiques (ex: Authorization), support `${ENV_VAR}` (headers sensibles masqués dans les logs)
 
 ## output.ai_report (options)
 - `enabled` : activer/désactiver

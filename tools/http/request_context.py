@@ -5,6 +5,7 @@ from tools.download_types import NetworkPolicy
 from tools.auth import build_headers
 from tools.http.policies import policy_with_overrides, RobotsDelayPolicy
 from tools.overrides import normalize_overrides, merge_headers
+from tools.logger_utils import mask_sensitive_headers
 
 
 @dataclass
@@ -41,6 +42,8 @@ def build_request_context(
         override_headers=overrides.get("headers"),
         user_agent=overrides.get("user_agent") or default_user_agent,
     )
+    # On peut logger les headers masqués si besoin côté appelant
+    masked_headers = mask_sensitive_headers(headers)
     return RequestContext(
         policy=policy,
         headers=headers,

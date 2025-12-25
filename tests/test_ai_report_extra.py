@@ -17,19 +17,21 @@ def test_load_template_from_yaml_prompt_key(tmp_path):
 def test_generate_ai_report_sets_pass_prompt_as_arg_for_codex(monkeypatch, tmp_path):
     captured = {}
 
-    def fake_run(cmd, prompt, timeout=120, pass_prompt_as_arg=False, **kwargs):
+    def fake_run(cmd, prompt, timeout=120, pass_prompt_as_arg=False, prompt_via_file=False, **kwargs):
         captured["cmd"] = cmd
         captured["pass_prompt_as_arg"] = pass_prompt_as_arg
+        captured["prompt_via_file"] = prompt_via_file
         return "OK"
 
     monkeypatch.setattr(ai_report, "_run_llm", fake_run)
     out = tmp_path / "ai.md"
     res = ai_report.generate_ai_report(
         [{"url": "http://x"}],
-        {"enabled": True, "command": "codex chat", "output": out},
+        {"enabled": True, "command": "codex exec --skip-git-repo-check -", "output": out, "prompt_via_file": True, "pass_prompt_as_arg": False},
         logger=None,
     )
 
     assert res == out
     assert out.read_text() == "OK"
-    assert captured["pass_prompt_as_arg"] is True
+    assert captured["pass_prompt_as_arg"] is False
+    assert captured["prompt_via_file"] is True

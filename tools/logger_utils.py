@@ -1,6 +1,7 @@
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from typing import Any, Dict
 
 
 def setup_logger(logging_conf: dict):
@@ -27,3 +28,21 @@ def setup_logger(logging_conf: dict):
         fh.setFormatter(formatter)
         logger.addHandler(fh)
     return logger
+
+
+def mask_sensitive_headers(headers: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Retourne une copie des headers avec masquage des valeurs sensibles.
+    Masque les clés contenant authorization, token, api-key (insensible à la casse).
+    """
+    masked = {}
+    for k, v in (headers or {}).items():
+        if not isinstance(k, str):
+            masked[k] = v
+            continue
+        lower = k.lower()
+        if any(key in lower for key in ["authorization", "token", "api-key", "apikey", "x-api-key"]):
+            masked[k] = "***"
+        else:
+            masked[k] = v
+    return masked

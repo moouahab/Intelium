@@ -1,7 +1,29 @@
+import os
+import re
 import yaml
 from pathlib import Path
 from typing import Dict, Any
 from urllib.parse import urlparse
+
+
+ENV_PATTERN = re.compile(r"\$\{([^}]+)\}")
+
+
+def _apply_env(value: Any) -> Any:
+    """
+    Remplace les tokens ${VAR} par la valeur d'environnement correspondante si présente.
+    Supporte les str/dict/list récursivement, laisse intact si env manquant.
+    """
+    if isinstance(value, str):
+        def repl(match):
+            key = match.group(1)
+            return os.getenv(key, match.group(0))
+        return ENV_PATTERN.sub(repl, value)
+    if isinstance(value, dict):
+        return {k: _apply_env(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_apply_env(item) for item in value]
+    return value
 
 
 def load_auth(path: str | Path) -> Dict[str, Any]:
@@ -11,7 +33,8 @@ def load_auth(path: str | Path) -> Dict[str, Any]:
         return {}
     except yaml.YAMLError:
         return {}
-    return data.get("authentication", {}) if isinstance(data, dict) else {}
+    auth_data = data.get("authentication", {}) if isinstance(data, dict) else {}
+    return _apply_env(auth_data)
 
 
 def build_headers(url: str, auth_conf: Dict[str, Any]) -> Dict[str, str]:

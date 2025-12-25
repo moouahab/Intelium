@@ -6,6 +6,7 @@ from tools.download_types import DownloadResult, NetworkPolicy, StorageTarget
 from tools.http.network import validate_url
 from tools.http.policies import RobotsDelayPolicy
 from tools.http.request_context import build_request_context
+from tools.http.headless import fetch_headless
 
 
 class HttpClient:
@@ -92,6 +93,22 @@ class HttpClient:
 
         if not self._robots_delay.is_allowed(url, respect_override=ctx.respect_robots):
             return DownloadResult(status="blocked-robots", content=None, error="Robots.txt interdit l'accès")
+
+        headless_requested = bool(source.get("overrides", {}).get("headless") or source.get("headless"))
+        if headless_requested and source.get("type", "html") == "html":
+            html = fetch_headless(
+                url,
+                timeout=ctx.policy.timeout,
+                user_agent=ctx.headers.get("User-Agent"),
+                proxy=(ctx.proxy.get("http") if isinstance(ctx.proxy, dict) else None),
+            )
+            if html:
+                saved = None
+                if storage:
+                    saved = storage.path_for(".html")
+                    saved.parent.mkdir(parents=True, exist_ok=True)
+                    saved.write_text(html)
+                return DownloadResult(status="downloaded", content=html, content_type="text/html", saved_path=saved, status_code=200)
 
         attempt = 0
         while True:

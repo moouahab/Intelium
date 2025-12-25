@@ -98,7 +98,7 @@ def test_ai_report_disabled_returns_none(tmp_path):
 
 
 def test_ai_report_autodetect_returns_none_if_not_found(tmp_path, monkeypatch):
-    monkeypatch.setattr("tools.ai_report.shutil.which", lambda cmd: None)
+    monkeypatch.setattr("tools.ai.command_plan.shutil.which", lambda cmd: None)
     res = generate_ai_report([{"url": "http://x"}], {"enabled": True, "command": ""}, logger=None)
     assert res is None
 
@@ -119,7 +119,7 @@ def test_ai_report_autodetect_codex(tmp_path, monkeypatch):
     # Simule la détection de "codex"
     def fake_which(cmd):
         return "/usr/bin/codex" if cmd == "codex" else None
-    monkeypatch.setattr("tools.ai_report.shutil.which", fake_which)
+    monkeypatch.setattr("tools.ai.command_plan.shutil.which", fake_which)
     monkeypatch.setattr("tools.ai_report._run_llm", lambda command, prompt, timeout=120, **kwargs: "OK")
     out = tmp_path / "ai.md"
     res = generate_ai_report([{"url": "http://x"}], {"enabled": True, "command": "", "output": out})

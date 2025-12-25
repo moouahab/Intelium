@@ -4,6 +4,8 @@
 - Les contenus téléchargés passent par `tools/parser.parse_content(type, content, scraping_conf)`.
 - La config `data_scraper` (config/scraping.yaml) pilote les options par type.
 - Le `Scraper` ajoute les extraits dans `results` (champ `extracted`) et dans le résumé JSON.
+- Optionnel : extraction d’IOC (CVE, URLs, IPv4) si `extract_iocs` est activé pour le type ou la source.
+- Optionnel : sanitation légère des extraits HTML/XML si `sanitize.enabled` ou `sanitize: true` (suppression scripts/commentaires, texte normalisé).
 
 ## Règles par type
 - **html** : utilise BeautifulSoup si dispo (`pip install beautifulsoup4`), sinon fallback brut.

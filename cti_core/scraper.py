@@ -76,6 +76,7 @@ class Scraper:
                 current.type,
                 current.content,
                 self.config_model.scraping_settings,
+                source_name=current.name,
             )
             texts_for_match = list(extracted)
             raw = result.content

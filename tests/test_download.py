@@ -10,6 +10,7 @@ class FakeResponse:
         self.headers = headers or {}
         self.status_code = status_code
         self.encoding = "utf-8"
+        self.closed = False
 
     def raise_for_status(self):
         if self.status_code >= 400:
@@ -19,6 +20,9 @@ class FakeResponse:
         data = self.content
         for i in range(0, len(data), chunk_size):
             yield data[i : i + chunk_size]
+
+    def close(self):
+        self.closed = True
 
 
 def test_download_html(monkeypatch, tmp_path):
@@ -79,3 +83,13 @@ def test_download_txt(monkeypatch):
     assert result.status == "downloaded"
     assert result.content == "plain text"
     assert "text/plain" in result.content_type
+
+
+def test_download_respects_max_bytes_stream(monkeypatch):
+    def fake_get(url, timeout=10, stream=False, headers=None, proxies=None):
+        return FakeResponse(content=b"a" * 10, headers={"Content-Type": "text/plain"})
+    monkeypatch.setattr("tools.http.network.requests.get", fake_get)
+    policy = NetworkPolicy(enforce_https=False, block_private=False, max_bytes=5)
+    result = download.download_source({"url": "http://example.com/file.txt", "type": "txt"}, policy=policy)
+    assert result.status == "error"
+    assert "taille > limite" in result.error
