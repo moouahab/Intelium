@@ -1,0 +1,18 @@
+prompt:
+  ai_report_template: |
+    Tu es un analyste CTI senior.
+    À partir des résultats de scraping suivants (JSON) :
+    {results_json}
+
+    Produit un rapport détaillé en français avec les sections :
+    - Résumé exécutif (2-3 phrases, décisions à prendre)
+    - Événements/actus clés par source (type, statut, erreurs éventuelles)
+    - IOCs / artefacts remarquables (URL/domaines/IP/hashes observés)
+    - Vulnérabilités / Risque (CVE, KEV, tendances)
+    - Acteurs / menaces (si identifiable)
+    - Recommandations (actions prioritaires, mitigations, vigilance)
+
+    Utilise systématiquement les mots-clés fournis (catégories et termes) pour prioriser les éléments et signaler les correspondances.
+    Mentionne explicitement les sources dont les téléchargements ont échoué ou ont été bloqués (robots, 403, taille > limite).
+
+    Style : concis mais informatif, listes courtes, langage clair et opérationnel.

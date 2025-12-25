@@ -1,0 +1,23 @@
+network:
+  enforce_https: true
+  block_private: true
+  user_agents:
+    - "CTI-Scraper/1.0"
+    - "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+  proxies: []   # liste optionnelle de proxies (http/https)
+  allow_domains:
+    - www.cert.ssi.gouv.fr
+    - www.cisa.gov
+    - www.ncsc.gov.uk
+    - www.bleepingcomputer.com
+    - feeds.feedburner.com
+    - blog.talosintelligence.com
+    - raw.githubusercontent.com
+    - otx.alienvault.com
+  max_bytes: 1048576  # 1 MB par ressource
+  timeout: 10
+  # connect_timeout/read_timeout optionnels (sinon fallback sur timeout unique)
+  # connect_timeout: 5
+  # read_timeout: 10
+  save:
+    base_dir: docs

@@ -1,0 +1,11 @@
+logging:
+  level: INFO
+  file: logs/threat_intel_collector.log
+  rotate: daily
+  max_size: 10MB
+  backup_count: 7
+  console: true
+  errors:
+    log: true
+    ignore: false
+    warn: true

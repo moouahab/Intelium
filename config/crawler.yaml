@@ -1,0 +1,16 @@
+crawler:
+  max_depth: 10        # profondeur par défaut (suivre les liens jusqu'à 2 niveaux)
+  max_pages: 100      # limite de pages par source pour éviter l'explosion
+  same_domain_only: true
+  allow_domains: []   # facultatif, sinon reuse allowlist réseau
+  respect_robots: true
+  crawl_delay_seconds: 1
+  max_concurrent: 1   # placeholder, monothread actuellement
+  user_agent: "CTI-Scraper/1.0 (+https://example.com/cti-scraper)"
+  request_timeout_seconds: 10
+  retry_attempts: 2
+  retry_backoff_seconds: 2
+  sources:
+    - name: "Example Source"
+      url: "https://example.com/cti-feed"
+      type: "rss" 

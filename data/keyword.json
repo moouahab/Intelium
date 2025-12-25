@@ -1,0 +1,54 @@
+{
+  "vulnerability": [
+    "CVE",
+    "buffer overflow",
+    "zero-day",
+    "unauthorized access",
+    "remote code execution",
+    "SQL injection",
+    "XXE",
+    "XSS"
+  ],
+  "malware": [
+    "ransomware",
+    "trojan",
+    "spyware",
+    "keylogger",
+    "wiper",
+    "rootkit",
+    "loader"
+  ],
+  "attack_technique": [
+    "phishing",
+    "brute force",
+    "credential stuffing",
+    "DLL injection",
+    "lateral movement",
+    "command and control",
+    "exfiltration"
+  ],
+  "actor": [
+    "APT",
+    "threat actor",
+    "hacker group",
+    "nation-state",
+    "insider threat"
+  ],
+  "indicator": [
+    "IOC",
+    "malicious domain",
+    "IP address",
+    "hash",
+    "URL",
+    "email address",
+    "file signature"
+  ],
+  "tool": [
+    "Mimikatz",
+    "Cobalt Strike",
+    "Metasploit",
+    "Empire",
+    "PowerShell",
+    "Nmap"
+  ]
+}

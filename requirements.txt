@@ -1,0 +1,10 @@
+requests
+PyYAML
+cryptography
+pytest
+beautifulsoup4
+jsonpath-ng
+pdfplumber
+pillow
+pytesseract
+lxml

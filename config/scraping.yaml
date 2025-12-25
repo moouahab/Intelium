@@ -1,0 +1,52 @@
+data_scraper:
+  html:
+    extract:
+      - tag: "h1"
+      - tag: "h2"
+      - tag: "p"
+      - tag: "a"
+      - tag: "li"
+      - tag: "img"
+      - tag: "script"
+    include_attributes: ["href", "src", "alt"]
+    errors: "log"
+
+  api:
+    parse_as: "json"
+    fields:
+      - name: "vulnerability"
+        path: "$.vulnerabilities[*].cveID"
+      - name: "description"
+        path: "$.vulnerabilities[*].notes[*].text"
+      - name: "vendor"
+        path: "$.vulnerabilities[*].vendorProject"
+    errors: "ignore"
+
+  xml:
+    extract_tags:
+      - tag: "item"
+      - tag: "title"
+    errors: "log"
+
+  pdf:
+    extract_text: true
+    keep_images: false
+    errors: "log"
+
+  csv:
+    delimiter: ","
+    has_header: true
+    select_columns: []
+    errors: "ignore"
+
+  image:
+    ocr: true
+    languages: ["fra", "eng"]
+    errors: "warn"
+
+  txt:
+    extract_text: true
+    errors: "ignore"
+
+  ignore:
+    reason: "This file is not relevant to threat intelligence collection."

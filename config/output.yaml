@@ -1,0 +1,16 @@
+output:
+  ai_report:
+    enabled: true             # activé par défaut, essaie de détecter un LLM local si command est vide
+    command: "codex exec --skip-git-repo-check -"        # commande codex en mode non interactif (prompt depuis stdin)
+    output: reports/ai_report.md
+    timeout: 400
+    prompt_template: ""       # optionnel, utilise {results_json} pour insérer les données
+    prompt_path: config/prompt.yaml   # template CTI par défaut
+    pass_prompt_as_arg: false # on force le passage par stdin
+  format: markdown
+  file: reports/threat_intel_report.md
+  split_per_source: true
+  detail_dir: reports/sources
+  language: fr
+  include_source: true
+  include_timestamp: true

@@ -1,0 +1,10 @@
+scheduling:
+  interval: 6h
+  start_time: "02:00"
+  timezone: "Europe/Paris"
+  retry_on_failure: true
+  max_retries: 3
+  backoff_factor: 2
+  notify_on_failure: true
+  notification_email:
+    - "mohamed.ouahab1999@gmail.com"

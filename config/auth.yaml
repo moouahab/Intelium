@@ -1,0 +1,6 @@
+authentication:
+  otx:
+    api_key: "YOUR-OTX-API-KEY"
+  cisa:
+    headers:
+      Authorization: "Bearer YOUR_CISA_TOKEN"

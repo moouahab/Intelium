@@ -1,0 +1,14 @@
+
+keywords: data/keyword.json
+
+include:
+  - sources.yaml
+  - scraping.yaml
+  - prompt.yaml
+  - output.yaml
+  - logging.yaml
+  - scheduling.yaml
+  - cache.yaml
+  - auth.yaml
+  - network.yaml
+  - crawler.yaml
