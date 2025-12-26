@@ -11,6 +11,7 @@ from tools.parsers.text_utils import ensure_text
 from tools.ioc_extractor import extract_iocs
 from tools.content_sanitizer import sanitize_html, sanitize_xml
 from copy import deepcopy
+from typing import Optional
 
 
 PARSERS: dict[str, Callable[[Any, dict], List[str]]] = {
@@ -22,6 +23,28 @@ PARSERS: dict[str, Callable[[Any, dict], List[str]]] = {
     "image": parse_image,
     "txt": parse_txt,
 }
+
+
+class ParserRegistry:
+    """
+    Petit registre injectable pour lier un type à un parseur.
+    Permet de surcharger/ajouter des parseurs dans les tests ou extensions.
+    """
+
+    def __init__(self, initial: dict[str, Callable[[Any, dict], List[str]]] | None = None):
+        self._parsers = dict(initial or {})
+
+    def get(self, name: str) -> Callable[[Any, dict], List[str]] | None:
+        return self._parsers.get(name)
+
+    def register(self, name: str, fn: Callable[[Any, dict], List[str]]) -> None:
+        self._parsers[name] = fn
+
+    def unregister(self, name: str) -> None:
+        self._parsers.pop(name, None)
+
+
+DEFAULT_PARSER_REGISTRY = ParserRegistry(PARSERS)
 
 
 def _merge_conf(base: dict, override: dict | None) -> dict:
@@ -48,13 +71,67 @@ def _post_process(results: List[str], conf: Dict[str, Any]) -> List[str]:
     return results
 
 
-def parse_content(source_type: str, content: Any, scraping_conf: dict, source_name: str | None = None) -> List[str]:
+def _extract_cvss_if_any(parsed: List[str], raw_content: Any) -> Optional[float]:
+    """
+    Essaie d'extraire un score CVSS depuis un contenu JSON/API:
+    - cherche des clés standards dans l'objet ou dans les extraits si ce sont des dict/JSON.
+    Retourne un float si trouvé, sinon None.
+    """
+    candidates = []
+
+    def _extract_from_obj(obj: Any):
+        if isinstance(obj, dict):
+            for key in ["cvss", "cvss_score", "baseScore", "cvssBaseScore"]:
+                if key in obj:
+                    try:
+                        return float(obj[key])
+                    except (TypeError, ValueError):
+                        continue
+        return None
+
+    # examiner le contenu brut si c'est du JSON déjà décodé (parse_json retourne des str)
+    try:
+        import json
+        obj = json.loads(raw_content) if isinstance(raw_content, str) else raw_content
+        candidates.append(_extract_from_obj(obj))
+    except Exception:
+        pass
+
+    for item in parsed:
+        if not isinstance(item, str):
+            continue
+        # interpréter un extrait comme un nombre ou un dict JSON
+        try:
+            val = float(item)
+            candidates.append(val)
+            continue
+        except (TypeError, ValueError):
+            pass
+        try:
+            import json
+            obj = json.loads(item)
+        except Exception:
+            obj = None
+        if obj:
+            candidates.append(_extract_from_obj(obj))
+    vals = [c for c in candidates if c is not None]
+    return vals[0] if vals else None
+
+
+def parse_content(
+    source_type: str,
+    content: Any,
+    scraping_conf: dict,
+    source_name: str | None = None,
+    parser_registry: Optional[ParserRegistry] = None,
+) -> List[str]:
     base_conf = scraping_conf.get(source_type, {})
     per_source_conf = {}
     if source_name:
         per_source_conf = (scraping_conf.get("per_source", {}) or {}).get(source_name, {}).get(source_type, {})
     type_conf = _merge_conf(base_conf, per_source_conf)
-    parser_fn = PARSERS.get(source_type)
+    registry = parser_registry or DEFAULT_PARSER_REGISTRY
+    parser_fn = registry.get(source_type)
     if not parser_fn or content is None:
         return []
     # Normalise l'encodage sur les contenus texte standards
@@ -68,11 +145,16 @@ def parse_content(source_type: str, content: Any, scraping_conf: dict, source_na
             content = sanitize_xml(content)
     try:
         results = parser_fn(content, type_conf)
+        cvss_score = None
+        if source_type == "api":
+            cvss_score = _extract_cvss_if_any(results, content)
         # Extraction IOC optionnelle (CVE/URL/IP) sur les extraits + le contenu brut
         if type_conf.get("extract_iocs"):
             texts = list(results)
             texts.append(ensure_text(content, encoding=type_conf.get("encoding")))
             results = results + extract_iocs(texts, type_conf.get("extract_iocs"))
+        if cvss_score is not None:
+            results = [f"CVSS:{cvss_score}"] + results
         return _post_process(results, type_conf)
     except Exception:
         return []

@@ -26,7 +26,7 @@ class FakeResponse:
 
 
 def test_download_html(monkeypatch, tmp_path):
-    def fake_get(url, timeout=10, stream=False, headers=None, proxies=None):
+    def fake_get(url, timeout=10, stream=False, headers=None, proxies=None, verify=True):
         return FakeResponse(text="<html>ok</html>", headers={"Content-Type": "text/html"})
     monkeypatch.setattr("tools.http.network.requests.get", fake_get)
     policy = NetworkPolicy(enforce_https=False, block_private=False)
@@ -37,7 +37,7 @@ def test_download_html(monkeypatch, tmp_path):
 
 
 def test_download_api_content_type_error(monkeypatch):
-    def fake_get(url, timeout=10, stream=False, headers=None, proxies=None):
+    def fake_get(url, timeout=10, stream=False, headers=None, proxies=None, verify=True):
         return FakeResponse(text="not json", headers={"Content-Type": "text/html"})
     monkeypatch.setattr("tools.http.network.requests.get", fake_get)
     policy = NetworkPolicy(enforce_https=False, block_private=False)
@@ -47,7 +47,7 @@ def test_download_api_content_type_error(monkeypatch):
 
 
 def test_download_image(monkeypatch):
-    def fake_get(url, timeout=10, stream=False, headers=None, proxies=None):
+    def fake_get(url, timeout=10, stream=False, headers=None, proxies=None, verify=True):
         return FakeResponse(content=b"\x89PNG", headers={"Content-Type": "image/png"})
     monkeypatch.setattr("tools.http.network.requests.get", fake_get)
     policy = NetworkPolicy(enforce_https=False, block_private=False)
@@ -65,7 +65,7 @@ def test_download_ignore_type_skipped():
 
 
 def test_download_unknown_type_fallback(monkeypatch):
-    def fake_get(url, timeout=10, stream=False, headers=None, proxies=None):
+    def fake_get(url, timeout=10, stream=False, headers=None, proxies=None, verify=True):
         return FakeResponse(text="fallback html", headers={"Content-Type": "text/html"})
     monkeypatch.setattr("tools.http.network.requests.get", fake_get)
     policy = NetworkPolicy(enforce_https=False, block_private=False)
@@ -75,7 +75,7 @@ def test_download_unknown_type_fallback(monkeypatch):
 
 
 def test_download_txt(monkeypatch):
-    def fake_get(url, timeout=10, stream=False, headers=None, proxies=None):
+    def fake_get(url, timeout=10, stream=False, headers=None, proxies=None, verify=True):
         return FakeResponse(text="plain text", headers={"Content-Type": "text/plain"})
     monkeypatch.setattr("tools.http.network.requests.get", fake_get)
     policy = NetworkPolicy(enforce_https=False, block_private=False)
@@ -86,7 +86,7 @@ def test_download_txt(monkeypatch):
 
 
 def test_download_respects_max_bytes_stream(monkeypatch):
-    def fake_get(url, timeout=10, stream=False, headers=None, proxies=None):
+    def fake_get(url, timeout=10, stream=False, headers=None, proxies=None, verify=True):
         return FakeResponse(content=b"a" * 10, headers={"Content-Type": "text/plain"})
     monkeypatch.setattr("tools.http.network.requests.get", fake_get)
     policy = NetworkPolicy(enforce_https=False, block_private=False, max_bytes=5)

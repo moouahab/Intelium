@@ -1,15 +1,36 @@
 output:
   ai_report:
     enabled: true
-    mode: langgraph           # utilise LangGraphRunner avec un LLM CLI local
-    langgraph_llm_command: "codex exec --skip-git-repo-check -"  # codex en mode non interactif (prompt via stdin)
-    command: "codex exec --skip-git-repo-check -"  # fallback CLI si LangGraph indisponible
+    mode: cli                 # mode CLI direct
+    langgraph_llm_command: "" # désactivé
+    command: "codex exec --skip-git-repo-check --ask-for-approval on-request --sandbox workspace-write -"  # CLI codex exec (non interactif) lit le prompt via stdin et demande l'approbation si besoin
     output: reports/ai_report.md
-    timeout: 400
+    timeout: 1000
+    retries: 1
+    retry_delay: 2
     prompt_template: ""       # optionnel, utilise {results_json} pour insérer les données
-    prompt_path: config/prompt.yaml   # template CTI par défaut
+    prompt_path: config/prompt.yaml   # template report par défaut
     pass_prompt_as_arg: false # on force le passage du prompt par stdin pour codex exec
     prompt_via_file: true     # évite les prompts trop longs en argument
+    scoring:
+      weights:
+        malware: 30  
+        vulnerability: 40
+        attack_technique: 20
+        default: 5    # poids par défaut pour toute catégorie non listée
+      cvss:
+        enabled: true
+        high_threshold: 9.0
+        medium_threshold: 7.0
+    analysis:                 # agent IA n°1 : extraction factuelle
+      enabled: true
+      command: "codex exec --skip-git-repo-check --ask-for-approval on-request --sandbox workspace-write -"
+      prompt_path: config/prompt.yaml
+      template_key: ai_analysis_template
+      output: reports/ai_analysis.md
+      timeout: 600
+      pass_prompt_as_arg: false
+      prompt_via_file: true
   format: markdown
   file: reports/threat_intel_report.md
   split_per_source: true

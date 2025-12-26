@@ -9,15 +9,30 @@ network:
     - www.cert.ssi.gouv.fr
     - www.cisa.gov
     - www.ncsc.gov.uk
-    - www.bleepingcomputer.com
     - feeds.feedburner.com
     - blog.talosintelligence.com
-    - raw.githubusercontent.com
+    - www.mandiant.com
+    - www.microsoft.com
+    - securelist.com
+    - www.exploit-db.com
     - otx.alienvault.com
-  max_bytes: 1048576  # 1 MB par ressource
+    - raw.githubusercontent.com
+    # - www.xmco.fr
+  max_bytes: 5242880  # 5 MB par ressource pour accepter KEV volumineux
   timeout: 10
   # connect_timeout/read_timeout optionnels (sinon fallback sur timeout unique)
   # connect_timeout: 5
   # read_timeout: 10
   save:
     base_dir: docs
+  sanitize_downloads: false   # nettoyer HTML/XML (scripts/commentaires) avant réutilisation
+  verify_ssl: true
+  # ca_bundle: "/path/to/ca-bundle.pem"  # optionnel pour pinning CA
+  # Choisir un scanner réel ou désactiver explicitement pour éviter un faux sentiment de protection.
+  scanner: yara             # none|yara|av
+  scan_command: "yara -s rules.yar {file}"  # commande explicite YARA
+  scan_timeout: 60
+  sandbox_dir: data/sandbox  # répertoire confiné pour tous les téléchargements
+  metrics_path: data/health.json  # trace les fetch (succès/erreurs/durée) dans health.json
+  # pinned_fingerprints:
+  #   - "sha256fingerprinthex"

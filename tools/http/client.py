@@ -1,12 +1,16 @@
 from typing import Optional, List, Dict
 import time
+import threading
+from contextlib import contextmanager
 
-from tools.download import download_source
+from tools.download import download_with_context
 from tools.download_types import DownloadResult, NetworkPolicy, StorageTarget
 from tools.http.network import validate_url
 from tools.http.policies import RobotsDelayPolicy
 from tools.http.request_context import build_request_context
-from tools.http.headless import fetch_headless
+from tools.logger_utils import mask_sensitive_headers
+from tools.http.headless import fetch_headless, HeadlessStrategy, get_default_headless_strategy
+from tools.metrics import record_fetch
 
 
 class HttpClient:
@@ -29,6 +33,8 @@ class HttpClient:
         user_agent: str | None = None,
         user_agents: Optional[List[str]] = None,
         proxies: Optional[List[str]] = None,
+        headless_strategy: Optional[HeadlessStrategy] = None,
+        logger=None,
     ):
         self.policy = policy
         self.auth_conf = auth_conf or {}
@@ -41,21 +47,32 @@ class HttpClient:
         self.proxies = proxies or []
         self._proxy_idx = 0
         self.retryable_statuses = {403, 429, 500, 502, 503, 504}
+        self.logger = logger
+        self._lock = threading.Lock()
+        self.metrics_path = getattr(policy, "metrics_path", None)  # optionnel, injecté via policy si présent
+        self.headless_strategy = headless_strategy or get_default_headless_strategy()
+
+    @contextmanager
+    def _timed_fetch(self):
+        start = time.time()
+        yield lambda: time.time() - start
 
     def _next_user_agent(self) -> str | None:
-        if self.user_agents:
-            ua = self.user_agents[self._ua_idx % len(self.user_agents)]
-            self._ua_idx += 1
-            return ua
-        return self.user_agent
+        with self._lock:
+            if self.user_agents:
+                ua = self.user_agents[self._ua_idx % len(self.user_agents)]
+                self._ua_idx += 1
+                return ua
+            return self.user_agent
 
     def _next_proxy(self) -> Optional[Dict[str, str]]:
-        if not self.proxies:
-            return None
-        proxy = self.proxies[self._proxy_idx % len(self.proxies)]
-        self._proxy_idx += 1
-        # requests accepte un dict {"http": "...", "https": "..."}
-        return {"http": proxy, "https": proxy}
+        with self._lock:
+            if not self.proxies:
+                return None
+            proxy = self.proxies[self._proxy_idx % len(self.proxies)]
+            self._proxy_idx += 1
+            # requests accepte un dict {"http": "...", "https": "..."}
+            return {"http": proxy, "https": proxy}
 
     def _should_retry(self, result: DownloadResult, attempt: int) -> bool:
         if attempt >= self.retries:
@@ -76,6 +93,38 @@ class HttpClient:
             factor = 2.0
         return self.backoff_seconds * (attempt + 1) * factor
 
+    def _run_headless(self, url: str, ctx, storage: Optional[StorageTarget]) -> DownloadResult | None:
+        if not self.headless_strategy:
+            return None
+        html = self.headless_strategy.fetch(
+            url,
+            timeout=ctx.policy.timeout,
+            user_agent=ctx.headers.get("User-Agent"),
+            proxy=(ctx.proxy.get("http") if isinstance(ctx.proxy, dict) else None),
+        )
+        if not html:
+            return None
+        saved = None
+        if storage:
+            saved = storage.path_for(".html")
+            saved.parent.mkdir(parents=True, exist_ok=True)
+            saved.write_text(html)
+        return DownloadResult(status="downloaded", content=html, content_type="text/html", saved_path=saved, status_code=200)
+
+    def _fetch_with_retries(self, url: str, source: dict, ctx, storage: Optional[StorageTarget]) -> DownloadResult:
+        attempt = 0
+        with self._timed_fetch() as elapsed:
+            while True:
+                self._robots_delay.wait(url, delay_override=ctx.crawl_delay)
+                result = download_with_context(source, ctx=ctx, storage=storage)
+                if self.metrics_path:
+                    record_fetch(self.metrics_path, elapsed(), result.status)
+                if not self._should_retry(result, attempt):
+                    return result
+                attempt += 1
+                backoff = self._backoff_delay(result, attempt)
+                time.sleep(backoff)
+
     def fetch(self, source: dict, storage: Optional[StorageTarget] = None) -> DownloadResult:
         url = source.get("url")
         ctx = build_request_context(
@@ -87,6 +136,17 @@ class HttpClient:
             proxy=self._next_proxy(),
         )
 
+        if self.logger:
+            try:
+                self.logger.debug(
+                    "HTTP fetch %s proxy=%s headers=%s",
+                    url,
+                    ctx.proxy,
+                    mask_sensitive_headers(ctx.headers),
+                )
+            except Exception:
+                pass
+
         validation_error = validate_url(url, ctx.policy)
         if validation_error:
             return DownloadResult(status="error", content=None, error=validation_error)
@@ -96,26 +156,8 @@ class HttpClient:
 
         headless_requested = bool(source.get("overrides", {}).get("headless") or source.get("headless"))
         if headless_requested and source.get("type", "html") == "html":
-            html = fetch_headless(
-                url,
-                timeout=ctx.policy.timeout,
-                user_agent=ctx.headers.get("User-Agent"),
-                proxy=(ctx.proxy.get("http") if isinstance(ctx.proxy, dict) else None),
-            )
-            if html:
-                saved = None
-                if storage:
-                    saved = storage.path_for(".html")
-                    saved.parent.mkdir(parents=True, exist_ok=True)
-                    saved.write_text(html)
-                return DownloadResult(status="downloaded", content=html, content_type="text/html", saved_path=saved, status_code=200)
+            headless_result = self._run_headless(url, ctx, storage)
+            if headless_result:
+                return headless_result
 
-        attempt = 0
-        while True:
-            self._robots_delay.wait(url, delay_override=ctx.crawl_delay)
-            result = download_source(source, policy=ctx.policy, storage=storage, headers=ctx.headers, proxies=ctx.proxy)
-            if not self._should_retry(result, attempt):
-                return result
-            attempt += 1
-            backoff = self._backoff_delay(result, attempt)
-            time.sleep(backoff)
+        return self._fetch_with_retries(url, source, ctx, storage)

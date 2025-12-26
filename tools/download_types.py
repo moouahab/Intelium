@@ -12,6 +12,15 @@ class NetworkPolicy:
     timeout: int = 10
     connect_timeout: Optional[int] = None
     read_timeout: Optional[int] = None
+    verify_ssl: bool = True
+    ca_bundle: Optional[str] = None
+    pinned_fingerprints: Optional[Set[str]] = None  # empreintes SHA256 de certificats TLS autorisés
+    scanner: Optional[str] = None  # none|yara|av (optionnel)
+    scan_command: Optional[str] = None  # commande effective de scan (utilise {file} comme placeholder)
+    scan_timeout: int = 60
+    sanitize_downloads: bool = False
+    sandbox_dir: Optional[str] = None  # répertoire racine autorisé pour l'écriture
+    metrics_path: Optional[str] = None  # fichier health.json optionnel pour tracer fetch success/erreur
 
 
 @dataclass

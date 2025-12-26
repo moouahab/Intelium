@@ -49,6 +49,24 @@ def record_run(metrics_path: str | Path, metrics: RunMetrics) -> None:
     metrics_path.write_text(json.dumps(payload, indent=2))
 
 
+def record_fetch(metrics_path: str | Path, duration_seconds: float, status: str) -> None:
+    """
+    Enregistre un fetch individuel (succès/erreur) avec comptage et durée cumulée.
+    """
+    metrics_path = Path(metrics_path)
+    metrics_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = _load_health(metrics_path)
+    fetch = payload.setdefault("fetch", {"total": 0, "success": 0, "failure": 0, "duration_sum": 0.0})
+    fetch["total"] += 1
+    fetch["duration_sum"] += float(duration_seconds)
+    if status == "downloaded":
+        fetch["success"] += 1
+    else:
+        fetch["failure"] += 1
+    payload["fetch"] = fetch
+    metrics_path.write_text(json.dumps(payload, indent=2))
+
+
 def time_block():
     start = time.time()
     yield lambda: time.time() - start

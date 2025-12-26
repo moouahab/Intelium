@@ -43,6 +43,7 @@ Créer un agent intelligent capable de :
    - stockage : contenu écrit sous `docs/<type>/<nom_source>_<hôte>.ext`.
    - hash pour détecter les changements.
 5. Filtrage/IA/rapport (à implémenter) puis CI/CD (à venir).
+6. Parsing extensible : registre de parseurs (`ParserRegistry`) injectables dans `tools/parser.py` pour ajouter/remplacer un parseur sans toucher au core.
 
 ## 🔧 Pré-requis
 - Python 3.10+
@@ -50,6 +51,7 @@ Créer un agent intelligent capable de :
   ```bash
   pip install requests PyYAML cryptography pytest
   ```
+- (Optionnel) Scan : YARA si `scan_command` est activé (`sudo apt install yara` ou `pip install yara-python`) et une règle `rules.yar` accessible.
 
 ## 🚀 Utilisation rapide / CLI
 - Lancer le scrape : `python3 main.py`
@@ -70,6 +72,7 @@ Créer un agent intelligent capable de :
 - Robots.txt respecté par défaut (`crawler.respect_robots`) et délai configurable (`crawl_delay_seconds`).
 - Pensez à restreindre les domaines si vous désactivez robots ou élargissez l'allowlist.
 - Headers sensibles : les valeurs `Authorization`/`*token*`/`api-key` sont masquées dans les logs.
+- Options avancées : `verify_ssl`/`ca_bundle`, `pinned_fingerprints` (pinning TLS), `sanitize_downloads`, `scan_command` (AV/YARA, ex: clamscan/yara) et `sandbox_dir` pour confiner les écritures (chroot/container recommandé en prod).
 
 ## 🔐 Chiffrement (tools/crypter.py)
 - Hachage : `compute_sha256(path)`, `compute_sha256_from_text(str)`, `verify_file_integrity(path, hash)`.

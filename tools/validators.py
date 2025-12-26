@@ -49,16 +49,25 @@ def validate_output(output_conf: dict) -> List[str]:
     if fmt not in {"markdown", "json"}:
         errors.append("output.format doit être 'markdown' ou 'json'.")
     ai_conf = output_conf.get("ai_report", {})
-    if ai_conf and not isinstance(ai_conf, dict):
-        errors.append("output.ai_report doit être un dictionnaire.")
+    errors.extend(validate_ai_report(ai_conf))
+    return errors
+
+
+def validate_ai_report(ai_conf: dict) -> List[str]:
+    errors: List[str] = []
+    if not ai_conf:
         return errors
+    if not isinstance(ai_conf, dict):
+        return ["output.ai_report doit être un dictionnaire."]
     if ai_conf.get("enabled", False):
-        cmd = ai_conf.get("command", "")
-        if not cmd:
-            # on accepte l'auto-détection mais on signale si rien n'est détecté côté run
-            pass
         prompt_path = ai_conf.get("prompt_path")
-        if prompt_path:
-            if not Path(prompt_path).exists():
-                errors.append(f"output.ai_report.prompt_path introuvable: {prompt_path}")
+        if prompt_path and not Path(prompt_path).exists():
+            errors.append(f"output.ai_report.prompt_path introuvable: {prompt_path}")
+        analysis_conf = ai_conf.get("analysis")
+        if analysis_conf and not isinstance(analysis_conf, dict):
+            errors.append("output.ai_report.analysis doit être un dictionnaire.")
+        if analysis_conf and analysis_conf.get("enabled"):
+            analysis_prompt_path = analysis_conf.get("prompt_path")
+            if analysis_prompt_path and not Path(analysis_prompt_path).exists():
+                errors.append(f"output.ai_report.analysis.prompt_path introuvable: {analysis_prompt_path}")
     return errors

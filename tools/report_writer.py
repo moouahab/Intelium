@@ -20,6 +20,8 @@ class ReportWriter:
         self.detail_dir = Path(self.output_conf.get("detail_dir", self.file_path.parent / "sources"))
         self.language = self.output_conf.get("language", "fr")
 
+        self.strategy = self._build_strategy()
+
     def _ensure_dirs(self):
         self.file_path.parent.mkdir(parents=True, exist_ok=True)
         if self.split:
@@ -48,35 +50,44 @@ class ReportWriter:
     def _write_json_detail(self, res: Dict[str, Any], path: Path):
         path.write_text(json.dumps(res, ensure_ascii=False, indent=2))
 
-    def _handle_detail(self, res: Dict[str, Any]) -> str | None:
-        if not self.split:
-            return None
-        title = res.get("name") or res.get("url", "source")
+    def _build_strategy(self):
         if self.fmt == "json":
-            detail_path = self.detail_dir / f"{_slugify(title)}.json"
-            if not (res.get("status") == "skipped-cache" and detail_path.exists()):
-                self._write_json_detail(res, detail_path)
-        else:
-            detail_path = self.detail_dir / f"{_slugify(title)}.md"
-            if not (res.get("status") == "skipped-cache" and detail_path.exists()):
-                self._write_markdown_detail(res, detail_path)
-        return str(detail_path)
+            return _JsonReportStrategy(self)
+        return _MarkdownReportStrategy(self)
 
-    def _write_json_main(self, results: List[Dict[str, Any]]) -> Path:
-        payload = {"sources": [], "lang": self.language}
-        for res in results:
-            entry = build_json_entry(res, detail_path=self._handle_detail(res))
-            payload["sources"].append(entry)
-        self.file_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2))
-        return self.file_path
+    def write(self, results: List[Dict[str, Any]]) -> Path:
+        self._ensure_dirs()
+        return self.strategy.write_main(results)
 
-    def _write_markdown_main(self, results: List[Dict[str, Any]]) -> Path:
-        lines = [f"# Rapport CTI ({self.language})", ""]
+
+class _BaseReportStrategy:
+    def __init__(self, writer: ReportWriter):
+        self.writer = writer
+
+    def _detail_path(self, res: Dict[str, Any], extension: str) -> Path:
+        title = res.get("name") or res.get("url", "source")
+        return self.writer.detail_dir / f"{_slugify(title)}{extension}"
+
+    def _should_skip_detail(self, res: Dict[str, Any], path: Path) -> bool:
+        return res.get("status") == "skipped-cache" and path.exists()
+
+
+class _MarkdownReportStrategy(_BaseReportStrategy):
+    def write_detail(self, res: Dict[str, Any]) -> Path:
+        path = self._detail_path(res, ".md")
+        if not self._should_skip_detail(res, path):
+            lines = self.writer._markdown_block(res, heading_prefix="#", extracted_limit=None, include_keywords=True)
+            path.write_text("\n".join(lines))
+        return path
+
+    def write_main(self, results: List[Dict[str, Any]]) -> Path:
+        lines = [f"# Rapport CTI ({self.writer.language})", ""]
         for res in results:
-            title = res.get("name") or res.get("url")
-            detail_path = self._handle_detail(res)
+            detail_path = None
+            if self.writer.split:
+                detail_path = str(self.write_detail(res))
             lines.extend(
-                self._markdown_block(
+                self.writer._markdown_block(
                     res,
                     heading_prefix="##",
                     detail_path=detail_path,
@@ -84,11 +95,24 @@ class ReportWriter:
                     include_keywords=not bool(detail_path),
                 )
             )
-        self.file_path.write_text("\n".join(lines))
-        return self.file_path
+        self.writer.file_path.write_text("\n".join(lines))
+        return self.writer.file_path
 
-    def write(self, results: List[Dict[str, Any]]) -> Path:
-        self._ensure_dirs()
-        if self.fmt == "json":
-            return self._write_json_main(results)
-        return self._write_markdown_main(results)
+
+class _JsonReportStrategy(_BaseReportStrategy):
+    def write_detail(self, res: Dict[str, Any]) -> Path:
+        path = self._detail_path(res, ".json")
+        if not self._should_skip_detail(res, path):
+            path.write_text(json.dumps(res, ensure_ascii=False, indent=2))
+        return path
+
+    def write_main(self, results: List[Dict[str, Any]]) -> Path:
+        payload = {"sources": [], "lang": self.writer.language}
+        for res in results:
+            detail_path = None
+            if self.writer.split:
+                detail_path = str(self.write_detail(res))
+            entry = build_json_entry(res, detail_path=detail_path)
+            payload["sources"].append(entry)
+        self.writer.file_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2))
+        return self.writer.file_path

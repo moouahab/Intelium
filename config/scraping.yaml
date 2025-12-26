@@ -15,6 +15,9 @@ data_scraper:
 
   api:
     parse_as: "json"
+    accept_mime:
+      - application/json
+      - text/plain    # fallback pour certains JSON servis en text/plain
     fields:
       - name: "vulnerability"
         path: "$.vulnerabilities[*].cveID"

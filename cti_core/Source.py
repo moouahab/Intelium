@@ -4,6 +4,7 @@ import hashlib
 from tools.crypter import compute_sha256_from_text
 from tools.download import download_source
 from tools.download_types import DownloadResult, NetworkPolicy, StorageTarget
+from tools.overrides import normalize_overrides
 
 
 class Source:
@@ -30,6 +31,7 @@ class Source:
         self.content: Optional[Any] = None
         self.status: str = "pending"
         self.error: Optional[str] = None
+        self.overrides: dict = normalize_overrides(source.get("overrides", {}))
 
     def _compute_hash_from_content(self, content: Any) -> Optional[str]:
         """Calcule un hash SHA-256 pour du texte ou des bytes."""
@@ -40,6 +42,10 @@ class Source:
         if isinstance(content, (bytes, bytearray)):
             return hashlib.sha256(content).hexdigest()
         return None
+
+    def normalized_overrides(self) -> dict:
+        """Retourne les overrides normalisés."""
+        return normalize_overrides(self.overrides)
 
     def download_manager(
         self,

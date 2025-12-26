@@ -22,6 +22,9 @@ def _deep_merge(base: dict, override: dict) -> dict:
     for k, v in override.items():
         if isinstance(v, dict) and isinstance(result.get(k), dict):
             result[k] = _deep_merge(result[k], v)
+        elif isinstance(v, list) and isinstance(result.get(k), list):
+            # Concatène les listes pour conserver les entrées existantes (ex: sources) tout en ajoutant les nouvelles
+            result[k] = result[k] + v
         else:
             result[k] = v
     return result

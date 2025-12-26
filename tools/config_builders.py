@@ -13,6 +13,24 @@ def build_network_policy(network_conf: dict[str, Any]) -> NetworkPolicy:
     max_bytes = to_int(max_bytes)
     connect_timeout = to_int(network_conf.get("connect_timeout"))
     read_timeout = to_int(network_conf.get("read_timeout"))
+    pins = network_conf.get("pinned_fingerprints") or None
+    if pins:
+        pins = set(pins)
+
+    # Résolution scanner
+    scanner = (network_conf.get("scanner") or "none").lower().strip()
+    scan_cmd_conf = network_conf.get("scan_command")
+    scan_cmd = None
+    if scanner == "none":
+        scan_cmd = None
+    elif scanner == "yara":
+        scan_cmd = scan_cmd_conf or "yara -s rules.yar {file}"
+    elif scanner == "av":
+        scan_cmd = scan_cmd_conf or "clamscan {file}"
+    else:
+        scanner = "none"
+        scan_cmd = None
+
     return NetworkPolicy(
         enforce_https=to_bool(network_conf.get("enforce_https", True), default=True),
         block_private=to_bool(network_conf.get("block_private", True), default=True),
@@ -21,6 +39,17 @@ def build_network_policy(network_conf: dict[str, Any]) -> NetworkPolicy:
         timeout=to_int(network_conf.get("timeout", 10), default=10) or 10,
         connect_timeout=connect_timeout,
         read_timeout=read_timeout,
+        verify_ssl=to_bool(network_conf.get("verify_ssl", True), default=True),
+        ca_bundle=network_conf.get("ca_bundle"),
+        pinned_fingerprints=pins,
+        scanner=scanner,
+        scan_command=scan_cmd,
+        scan_timeout=to_int(network_conf.get("scan_timeout", 60), default=60) or 60,
+        sanitize_downloads=to_bool(network_conf.get("sanitize_downloads", False), default=False),
+        sandbox_dir=network_conf.get("sandbox_dir"),
+        # Optionnel : chemin metrics pour les fetch individuels
+        # (transporte l'info via NetworkPolicy pour l'injecter côté HttpClient)
+        **({"metrics_path": network_conf.get("metrics_path")} if network_conf.get("metrics_path") else {}),
     )
 
 

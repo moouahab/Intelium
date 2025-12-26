@@ -44,13 +44,18 @@ class CrawlerState:
 
     def pop_if_any(self):
         with self._guard():
-            if self.max_pages and self.pages_processed >= self.max_pages:
-                return None
-            if not self.queue:
-                return None
-            item = self.queue.popleft()
-            self.pages_processed += 1
-            return item
+            while True:
+                if self.max_pages and self.pages_processed >= self.max_pages:
+                    return None
+                if not self.queue:
+                    return None
+                source, depth = self.queue.popleft()
+                norm = self._normalizer(source.url)
+                if norm in self.visited:
+                    continue
+                # Réserve un slot de page dès la sortie de queue pour respecter max_pages, même en multithread
+                self.pages_processed += 1
+                return (source, depth)
 
     def mark_visited(self, url: str) -> None:
         with self._guard():

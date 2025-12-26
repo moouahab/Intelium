@@ -63,10 +63,21 @@ def policy_with_overrides(base_policy: NetworkPolicy, overrides: dict | None) ->
     max_bytes_int = to_int(max_bytes) if max_bytes is not None else base_policy.max_bytes
     timeout = overrides.get("request_timeout_seconds", base_policy.timeout)
     timeout_int = to_int(timeout, default=base_policy.timeout) or base_policy.timeout
+    # Conserve l'ensemble des garde-fous (TLS, sandbox, scan) et ne modifie que les champs overridables
     return NetworkPolicy(
         enforce_https=base_policy.enforce_https,
         block_private=base_policy.block_private,
         allow_domains=base_policy.allow_domains,
         max_bytes=max_bytes_int,
         timeout=timeout_int,
+        connect_timeout=base_policy.connect_timeout,
+        read_timeout=base_policy.read_timeout,
+        verify_ssl=base_policy.verify_ssl,
+        ca_bundle=base_policy.ca_bundle,
+        pinned_fingerprints=base_policy.pinned_fingerprints,
+        scanner=base_policy.scanner,
+        scan_command=base_policy.scan_command,
+        scan_timeout=base_policy.scan_timeout,
+        sanitize_downloads=base_policy.sanitize_downloads,
+        sandbox_dir=base_policy.sandbox_dir,
     )

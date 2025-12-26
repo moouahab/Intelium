@@ -1,4 +1,5 @@
 import logging
+import json
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Dict
@@ -46,3 +47,14 @@ def mask_sensitive_headers(headers: Dict[str, Any]) -> Dict[str, Any]:
         else:
             masked[k] = v
     return masked
+
+
+def log_structured(logger: logging.Logger, level: int, message: str, **fields):
+    """
+    Log structuré (JSON) pour l'observabilité.
+    """
+    payload = {"message": message, **fields}
+    try:
+        logger.log(level, json.dumps(payload, ensure_ascii=False))
+    except Exception:
+        logger.log(level, f"{message} | {fields}")

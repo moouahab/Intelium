@@ -1,18 +1,26 @@
 prompt:
   ai_report_template: |
-    Tu es un analyste CTI senior.
-    À partir des résultats de scraping suivants (JSON) :
+    Tu es un analyste CTI senior. Les données suivantes proviennent de notre scraping (JSON) :
     {results_json}
 
-    Produit un rapport détaillé en français avec les sections :
-    - Résumé exécutif (2-3 phrases, décisions à prendre)
-    - Événements/actus clés par source (type, statut, erreurs éventuelles)
-    - IOCs / artefacts remarquables (URL/domaines/IP/hashes observés)
-    - Vulnérabilités / Risque (CVE, KEV, tendances)
-    - Acteurs / menaces (si identifiable)
-    - Recommandations (actions prioritaires, mitigations, vigilance)
+    Produit un brief CTI concis en français, structuré ainsi :
+    - Résumé exécutif : 2-3 phrases avec menaces/risques prioritaires et décisions immédiates.
+    - Sources analysées : type (html/xml/api), statut (success/error/blocked/skipped), erreurs/limites (robots, max_bytes, MIME, scan), fichiers sauvegardés, volume d’extraits.
+    - IOCs / artefacts : URLs/domaines/IP/hashes/C2 observés ; cite les produits/versions affectés si présent.
+    - Vulnérabilités / tendances : CVE/KEV, produits/versions, criticité (si mentionnée), tendances d’exploitation.
+    - Acteurs / campagnes / TTP : groupes, familles malware, techniques notables (C2, LPE, lateral, initial access) si présents.
+    - Produits / fournisseurs ciblés : éditeurs, solutions, stacks mentionnées (VPN, mail, cloud, réseau, ICS, etc.).
+    - Reco CTI/sécu : actions prioritaires (patch, blocage IOC, surveillance), sources à relancer si bloquées/tronquées.
 
-    Utilise systématiquement les mots-clés fournis (catégories et termes) pour prioriser les éléments et signaler les correspondances.
-    Mentionne explicitement les sources dont les téléchargements ont échoué ou ont été bloqués (robots, 403, taille > limite).
+    Contraintes :
+    - Ne pas inventer : si une info n’apparaît pas dans les extraits, indique qu’elle est absente.
+    - Signale les sources bloquées/erreurs (robots, MIME, max_bytes) qui limitent l’analyse.
+    - Style : listes courtes, concret, sans blabla marketing.
 
-    Style : concis mais informatif, listes courtes, langage clair et opérationnel.
+  ai_analysis_template: |
+    Tu es un agent d'analyse CTI factuelle. À partir des résultats de scraping (JSON) ci-dessous, produis une extraction concise et structurée :
+    {results_json}
+
+    Pour chaque source : type, statut (success/error/blocked/skipped-cache), erreurs/limites (robots, max_bytes, MIME, scan), fichier sauvegardé et volume d’extraits.
+    Liste ensuite les éléments observables : titres/URLs/dates, produits/versions évoqués, services/secteurs, IOCs (URL/domaines/IP/hashes), CVE/KEV mentionnés, acteurs/campagnes si présents.
+    Formate en listes courtes, sans interprétation ni recommandations, et mentionne explicitement s’il n’y a aucun extrait exploitable.

@@ -1,13 +1,21 @@
 {
   "vulnerability": [
     "CVE",
-    "buffer overflow",
     "zero-day",
-    "unauthorized access",
+    "buffer overflow",
     "remote code execution",
     "SQL injection",
+    "cross-site scripting",
+    "privilege escalation",
+    "directory traversal",
     "XXE",
-    "XSS"
+    "RCE",
+    "XSS",
+    "CSRF",
+    "authentication bypass",
+    "unauthorized access",
+    "memory corruption",
+    "heap overflow"
   ],
   "malware": [
     "ransomware",
@@ -16,32 +24,56 @@
     "keylogger",
     "wiper",
     "rootkit",
-    "loader"
+    "loader",
+    "virus",
+    "worm",
+    "botnet",
+    "adware",
+    "malicious payload",
+    "malvertising"
   ],
   "attack_technique": [
     "phishing",
+    "spear phishing",
     "brute force",
     "credential stuffing",
-    "DLL injection",
     "lateral movement",
+    "DLL injection",
     "command and control",
-    "exfiltration"
+    "C2 server",
+    "exfiltration",
+    "privilege escalation",
+    "initial access",
+    "persistence",
+    "tunneling",
+    "living off the land",
+    "pass-the-hash"
   ],
   "actor": [
     "APT",
+    "nation-state",
     "threat actor",
     "hacker group",
-    "nation-state",
-    "insider threat"
+    "insider threat",
+    "cybercriminal",
+    "hacktivist",
+    "black hat",
+    "script kiddie"
   ],
   "indicator": [
     "IOC",
-    "malicious domain",
     "IP address",
-    "hash",
+    "domain",
     "URL",
+    "hash",
+    "SHA256",
+    "MD5",
+    "file signature",
     "email address",
-    "file signature"
+    "registry key",
+    "mutex",
+    "beacon",
+    "hostname"
   ],
   "tool": [
     "Mimikatz",
@@ -49,6 +81,14 @@
     "Metasploit",
     "Empire",
     "PowerShell",
-    "Nmap"
+    "Nmap",
+    "Netcat",
+    "BloodHound",
+    "Wireshark",
+    "Burp Suite",
+    "Hydra",
+    "Aircrack-ng",
+    "Impacket",
+    "Responder"
   ]
 }

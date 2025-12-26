@@ -1,5 +1,6 @@
 # Gestion intelligente et structurée de la configuration
 from pathlib import Path
+import re
 from typing import Any, List
 from tools.load_config import (
     load_yaml_config,
@@ -11,6 +12,8 @@ from .Source import Source
 from tools.download_types import StorageTarget
 from tools.auth import load_auth
 from tools.validators import validate_auth, validate_crawler, validate_output
+from tools.config_validator import validate_config
+from tools.overrides import normalize_overrides
 
 
 SUPPORTED_SOURCE_TYPES = {"html", "api", "xml", "pdf", "csv", "txt", "image", "ignore"}
@@ -40,16 +43,54 @@ class ConfigModel:
         self.source_objects: List[Source] = self._build_sources(self.sources, strict=strict)
         self._validate_configs()
 
-    def build_storage_target(self, source: Source) -> StorageTarget:
+    def _sanitize_segment(self, value: str | None, default: str) -> str:
+        """
+        Nettoie un segment de chemin (nom/type) pour éviter les traversals et les séparateurs.
+        Conserve uniquement les caractères autorisés, remplace le reste par underscore.
+        """
+        text = (value or "").strip()
+        text = text.replace("/", "_").replace("\\", "_")
+        text = re.sub(r"[^A-Za-z0-9._-]", "_", text)
+        text = text.lstrip(".")
+        if not text or text in {".", ".."}:
+            return default
+        return text
+
+    def _resolve_base_dir(self) -> Path:
+        """
+        Détermine le dossier de stockage effectif en respectant un éventuel sandbox_dir.
+        Si sandbox_dir est défini et que base_dir n'est pas déjà dedans, on le reloge sous le sandbox.
+        """
         base_dir = Path(self.network_settings.get("save", {}).get("base_dir", "docs"))
-        theme = source.type or "misc"
-        name = source.name or "source"
+        sandbox_dir = self.network_settings.get("sandbox_dir")
+        if not sandbox_dir:
+            return base_dir
+
+        sandbox_path = Path(sandbox_dir)
+        try:
+            sandbox_resolved = sandbox_path.resolve()
+        except Exception:
+            sandbox_resolved = sandbox_path
+
+        try:
+            base_resolved = base_dir.resolve()
+        except Exception:
+            base_resolved = base_dir
+
+        if sandbox_resolved in base_resolved.parents or base_resolved == sandbox_resolved:
+            return base_dir
+        return sandbox_resolved / base_dir
+
+    def build_storage_target(self, source: Source) -> StorageTarget:
+        base_dir = self._resolve_base_dir()
+        theme = self._sanitize_segment(source.type, "misc")
+        name = self._sanitize_segment(source.name, "source")
         return StorageTarget(base_dir=base_dir, theme=theme, name=name)
 
     def _validate_configs(self) -> None:
-        self.errors.extend(validate_auth(self.auth_settings))
-        self.errors.extend(validate_crawler(self.crawler_settings))
-        self.errors.extend(validate_output(self.yaml_config.get("output", {})))
+        errs, warns = validate_config(self.yaml_config)
+        self.errors.extend(errs)
+        self.warnings.extend(warns)
 
     def _build_sources(self, raw_sources: Any, strict: bool) -> List[Source]:
         if not raw_sources:
@@ -87,7 +128,9 @@ class ConfigModel:
             normalized["type"] = stype
             overrides = normalized.get("overrides", {})
             if overrides and isinstance(overrides, dict):
-                normalized["overrides"] = overrides
+                clean_overrides = normalize_overrides(overrides)
+                if clean_overrides:
+                    normalized["overrides"] = clean_overrides
             built_sources.append(Source(normalized))
         return built_sources
 

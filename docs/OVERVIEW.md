@@ -7,7 +7,8 @@
 - `cti_core/scraper.py` : crawl/download, respect cache, collecte des résultats. `CrawlerState` (cti_core/crawler_state.py) gère queue/visited. Respect robots.txt (optionnel) + délai crawl configurables. La logique cache/résultats est centralisée dans `cti_core/result_recorder.py`. La création d’enfants HTML et la normalisation des overrides passent par `cti_core/sources_factory.py`.
 - `tools/download.py` : handlers par type (html/api/xml/pdf/csv/txt/image/ignore) avec streaming, limites, stockage sous `docs/<type>/...`.
 - `tools/report.py` : génération de rapport (markdown/json), découpe par source si configuré. `tools/ai_report.py` (optionnel) permet de générer un rapport CTI via un LLM local en CLI.
-- Utilitaires : `tools/http/` (network + request_context + policies + URL utils + url_policy + auth headers par domaine), `tools/html_links.py` (extraction liens), `tools/cache.py` + `cache_factory.py` (cache global ou par site), `tools/logger_utils.py` (logging).
+- Utilitaires : `tools/http/` (network + request_context + policies + URL utils + url_policy + auth headers par domaine), headless extensible (Playwright par défaut, fallback Selenium si dispo) pour les pages JS, `tools/html_links.py` (extraction liens), `tools/cache.py` + `cache_factory.py` (cache global ou par site), `tools/logger_utils.py` (logging).
+- Parsers : registre injectable via `ParserRegistry` (out-of-the-box : html/api/xml/csv/pdf/ocr/txt). `parse_content` accepte un `parser_registry` pour ajouter ou remplacer un parseur sans modifier le core.
 - Configs : `config/conf.yaml` inclut `sources.yaml`, `network.yaml`, `crawler.yaml`, `scraping.yaml`, etc.
 
 ## Flux d’exécution
@@ -64,7 +65,7 @@
 
 ## Configs clés
 - `config/sources.yaml` : sources CTI (CERT-FR, CISA KEV, RSS Talos/NCSC/HackerNews/SecurityWeek, CVE sample, OTX).
-- `config/network.yaml` : HTTPS, block_private, allow_domains, max_bytes, timeout, dossier de sauvegarde. Garde-fous : enforce_https + blocage réseau privé, allowlist stricte, robots.txt respecté par défaut.
+- `config/network.yaml` : HTTPS, block_private, allow_domains, max_bytes, timeout, dossier de sauvegarde. Garde-fous : enforce_https + blocage réseau privé, allowlist stricte, robots.txt respecté par défaut. Options avancées : `verify_ssl`/`ca_bundle` (pinning CA), `pinned_fingerprints` (pinning TLS), `sanitize_downloads` (nettoyage HTML/XML), `scan_command` (AV/YARA, ex. `yara -s rules.yar {file}`), `sandbox_dir` (confinement des écritures).
 - `config/crawler.yaml` : `max_depth`, `max_pages`, `same_domain_only`, `allow_domains` (fallback sur réseau), `respect_robots`, `crawl_delay_seconds`, `max_concurrent`.
 - `config/scraping.yaml` : règles d’extraction par type (HTML tags, API JSONPath, XML tags, PDF/CSV/image/TXT options).
 - `config/cache.yaml` : fichier cache, auto_save, `per_site` (fichiers par domaine).

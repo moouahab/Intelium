@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from .Source import Source
 from .crawler_state import CrawlerState
-from cti_core.sources_factory import enqueue_links, normalize_overrides
+from cti_core.sources_factory import enqueue_links
 from cti_core.result_recorder import ResultRecorder
 from tools.cache import CacheManager
 from tools.download_types import NetworkPolicy
@@ -55,7 +55,7 @@ class Scraper:
     def _fetch_and_parse(self, current: Source):
         storage = self.config_model.build_storage_target(current)
         source_dict = {"url": current.url, "type": current.type, "name": current.name}
-        overrides = normalize_overrides(getattr(current, "overrides", None))
+        overrides = current.normalized_overrides() if hasattr(current, "normalized_overrides") else {}
         if overrides:
             source_dict["overrides"] = overrides
 
@@ -86,27 +86,41 @@ class Scraper:
             keyword_hits = find_keyword_hits(texts_for_match, getattr(self.config_model, "keywords", {}))
         return result, extracted, keyword_hits
 
+    def _process_source(self, state: CrawlerState, current: Source, depth: int) -> None:
+        if state.already_visited(current.url):
+            return
+        state.mark_visited(current.url)
+
+        if self.recorder.check_or_record_cache_hit(current.url, current.type, current.name or current.url):
+            return
+
+        fetched = self._fetch_and_parse(current)
+        if not isinstance(fetched, tuple):
+            return
+        if len(fetched) == 3:
+            result, extracted, keyword_hits = fetched
+        elif len(fetched) == 2:
+            result, extracted = fetched
+            keyword_hits = {}
+        else:
+            return
+
+        self.recorder.record_result(current, result, extracted, keyword_hits)
+        enqueue_links(
+            current,
+            depth,
+            state,
+            self.max_depth,
+            self.url_policy,
+        )
+
     def _worker_loop(self, state: CrawlerState):
         while True:
             item = state.pop_if_any()
             if not item:
                 break
             current, depth = item
-            if state.already_visited(current.url):
-                continue
-            state.mark_visited(current.url)
-
-            processed = self.recorder.process(current, self._fetch_and_parse)
-            if processed is None:
-                continue
-            result, extracted, keyword_hits = processed
-            enqueue_links(
-                current,
-                depth,
-                state,
-                self.max_depth,
-                self.url_policy,
-            )
+            self._process_source(state, current, depth)
 
     def _process_single(self, source: Source):
         thread_safe = self.max_concurrent > 1

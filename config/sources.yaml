@@ -3,13 +3,13 @@ sources:
     type: html
     name: CERT-FR
 
-  - url: https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
-    type: api
-    name: CISA
-
   - url: https://www.cert.ssi.gouv.fr/alerte/feed/
     type: xml
     name: CERT-FR-RSS
+
+  - url: https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
+    type: api
+    name: CISA-KEV
 
   - url: https://www.ncsc.gov.uk/api/1/services/v1/report-rss-feed.xml
     type: xml
@@ -19,22 +19,43 @@ sources:
     type: xml
     name: HACKER-NEWS-RSS
 
+  - url: https://feeds.feedburner.com/SecurityWeek
+    type: xml
+    name: SECURITYWEEK-RSS
+
   - url: https://blog.talosintelligence.com/feed/
     type: xml
     name: TALOS-RSS
 
-  - url: https://feeds.feedburner.com/SecurityWeek
+  - url: https://www.mandiant.com/resources/rss.xml
     type: xml
-    name: SECURITYWEEK-RSS
+    name: MANDIANT-RSS
+
+  - url: https://www.microsoft.com/security/blog/feed/
+    type: xml
+    name: MS-SECURITY-BLOG
+
+  - url: https://securelist.com/feed/
+    type: xml
+    name: SECURELIST-RSS
+
+  - url: https://www.exploit-db.com/rss.xml
+    type: xml
+    name: EXPLOIT-DB-RSS
+
+  - url: https://otx.alienvault.com/api/v1/indicators/export
+    type: api
+    name: ALIENVAULT-OTX
+    overrides:
+      respect_robots: true
 
   - url: https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2024/0xxx/CVE-2024-0001.json
     type: api
     name: CVE-SAMPLE
 
-  - url: https://www.bleepingcomputer.com/feed/
-    type: xml
-    name: BLEEPING-RSS
-
-  - url: https://otx.alienvault.com/api/v1/indicators/export
-    type: api
-    name: ALIENVAULT-OTX
+  # - url: https://www.xmco.fr/
+  #   type: html
+  #   name: XMCO
+  #   overrides:
+  #     crawl_delay_seconds: 2
+  #     headless: true           # décommente si le site nécessite JS

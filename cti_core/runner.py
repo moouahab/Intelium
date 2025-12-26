@@ -1,9 +1,11 @@
+import logging
+
 from cti_core.config_model import ConfigModel
 from cti_core.scraper import Scraper
 from tools.load_config import get_config_as_json_string
 from tools.cache_factory import build_cache
 from tools.cache import CacheManager, CacheRegistry
-from tools.logger_utils import setup_logger
+from tools.logger_utils import setup_logger, log_structured
 from tools.report import write_report
 from cti_core.cli import render_progress, print_summary
 from tools.ai_report import generate_ai_report
@@ -25,10 +27,12 @@ def run(config_path: str = "config/conf.yaml", force_ai_report: bool | None = No
     if config_model.has_warnings():
         for warning in config_model.warnings:
             logger.warning("Avertissement configuration : %s", warning)
+        log_structured(logger, logging.WARNING, "config_warnings", warnings=config_model.warnings)
 
     if config_model.has_errors():
         for error in config_model.errors:
             logger.error("Erreur configuration : %s", error)
+        log_structured(logger, logging.ERROR, "config_errors", errors=config_model.errors)
         logger.error("Arrêt du run : configuration invalide.")
         return
 

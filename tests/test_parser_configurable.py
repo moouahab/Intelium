@@ -55,3 +55,18 @@ def test_sanitize_html_and_xml():
     res_xml = parser.parse_content("xml", xml_content, xml_conf)
     assert any("Hello" in item for item in res_xml)
     assert all("ignored" not in item for item in res_xml)
+
+
+def test_custom_parser_registry_injection():
+    calls = {}
+
+    def fake_parser(content, conf):
+        calls["content"] = content
+        return ["ok-custom"]
+
+    registry = parser.ParserRegistry()
+    registry.register("custom", fake_parser)
+    conf = {"custom": {}}
+    res = parser.parse_content("custom", "payload", conf, parser_registry=registry)
+    assert res == ["ok-custom"]
+    assert calls["content"] == "payload"

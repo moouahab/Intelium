@@ -69,25 +69,3 @@ class ResultRecorder:
             self.record_cache_hit(url, source_type, name, cached)
             return True
         return False
-
-    def process(self, source: Source, fetch_and_parse_fn) -> tuple | None:
-        """
-        Orchestration complète :
-        - check cache hit (et enregistre)
-        - sinon fetch + parse via callback
-        - enregistre résultat + retour (result, extracted)
-        """
-        if self.check_or_record_cache_hit(source.url, source.type, source.name or source.url):
-            return None
-        fetched = fetch_and_parse_fn(source)
-        if not isinstance(fetched, tuple):
-            return None
-        if len(fetched) == 3:
-            result, extracted, keyword_hits = fetched
-        elif len(fetched) == 2:
-            result, extracted = fetched
-            keyword_hits = {}
-        else:
-            return None
-        self.record_result(source, result, extracted, keyword_hits)
-        return result, extracted, keyword_hits

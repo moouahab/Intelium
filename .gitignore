@@ -143,6 +143,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.ruff_cache/
 
 # Spyder project settings
 .spyderproject
@@ -235,3 +236,17 @@ id_ed25519.pub
 
 # Project-specific secrets
 config/auth.yaml
+secret
+
+# Project artefacts
+data/cache.json
+data/cache_sites/
+data/health.json
+logs/
+reports/
+docs/html/
+docs/xml/
+docs/pdf/
+docs/csv/
+docs/image/
+docs/txt/

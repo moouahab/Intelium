@@ -1,4 +1,5 @@
 import importlib
+from concurrent.futures import ThreadPoolExecutor
 
 from tools.download_types import NetworkPolicy, DownloadResult
 
@@ -28,11 +29,11 @@ def test_http_client_applies_max_bytes_override(monkeypatch):
 
     captured = {}
 
-    def fake_download_source(source, policy, storage=None, headers=None, proxies=None):
-        captured["max_bytes"] = policy.max_bytes
+    def fake_download_with_context(source, ctx, storage=None):
+        captured["max_bytes"] = ctx.policy.max_bytes
         return DownloadResult(status="downloaded", content="ok", content_type="text/plain")
 
-    monkeypatch.setattr(client_module, "download_source", fake_download_source)
+    monkeypatch.setattr(client_module, "download_with_context", fake_download_with_context)
     monkeypatch.setattr(client_module.RobotsDelayPolicy, "is_allowed", lambda self, url, respect_override=None: True)
     monkeypatch.setattr(client_module.RobotsDelayPolicy, "wait", lambda self, url, delay_override=None: None)
 
@@ -57,12 +58,12 @@ def test_request_context_applies_user_agent_and_headers(monkeypatch):
 
     captured_headers = {}
 
-    def fake_download_source(source, policy, storage=None, headers=None, proxies=None):
-        captured_headers.update(headers or {})
-        captured_headers["proxy"] = proxies
+    def fake_download_with_context(source, ctx, storage=None):
+        captured_headers.update(ctx.headers or {})
+        captured_headers["proxy"] = ctx.proxy
         return DownloadResult(status="downloaded", content="ok", content_type="text/plain")
 
-    monkeypatch.setattr(client_module, "download_source", fake_download_source)
+    monkeypatch.setattr(client_module, "download_with_context", fake_download_with_context)
 
     client = client_module.HttpClient(
         policy=NetworkPolicy(enforce_https=False, block_private=False),
@@ -86,13 +87,13 @@ def test_http_client_retries_on_http_error(monkeypatch):
     client_module = importlib.import_module("tools.http.client")
     calls = {"count": 0}
 
-    def fake_download_source(source, policy, storage=None, headers=None, proxies=None):
+    def fake_download_with_context(source, ctx, storage=None):
         calls["count"] += 1
         if calls["count"] == 1:
             return DownloadResult(status="http-error", content=None, status_code=503, error="HTTP 503")
         return DownloadResult(status="downloaded", content="ok", status_code=200)
 
-    monkeypatch.setattr(client_module, "download_source", fake_download_source)
+    monkeypatch.setattr(client_module, "download_with_context", fake_download_with_context)
     monkeypatch.setattr(client_module.RobotsDelayPolicy, "is_allowed", lambda self, url, respect_override=None: True)
     monkeypatch.setattr(client_module.RobotsDelayPolicy, "wait", lambda self, url, delay_override=None: None)
 
@@ -133,22 +134,23 @@ def test_http_client_headless_shortcuts_download(monkeypatch):
     monkeypatch.setattr(client_module.RobotsDelayPolicy, "wait", lambda self, url, delay_override=None: None)
     called = {"headless": 0, "download": 0}
 
-    def fake_headless(url, timeout=10, user_agent=None, proxy=None):
-        called["headless"] += 1
-        return "<html>headless</html>"
+    class FakeHeadlessStrategy:
+        def fetch(self, url, timeout=10, user_agent=None, proxy=None):
+            called["headless"] += 1
+            return "<html>headless</html>"
 
-    def fake_download_source(source, policy, storage=None, headers=None, proxies=None):
+    def fake_download_with_context(source, ctx, storage=None):
         called["download"] += 1
         return DownloadResult(status="downloaded", content="ok", content_type="text/plain")
 
-    monkeypatch.setattr(client_module, "fetch_headless", fake_headless)
-    monkeypatch.setattr(client_module, "download_source", fake_download_source)
+    monkeypatch.setattr(client_module, "download_with_context", fake_download_with_context)
 
     client = client_module.HttpClient(
         policy=NetworkPolicy(enforce_https=False, block_private=False),
         auth_conf={},
         respect_robots=False,
         crawl_delay=0,
+        headless_strategy=FakeHeadlessStrategy(),
     )
 
     result = client.fetch({"url": "http://example.com", "type": "html", "overrides": {"headless": True}})
@@ -182,7 +184,7 @@ def test_http_client_enforces_max_bytes_stream(monkeypatch):
         def close(self):
             self.closed = True
 
-    def fake_get(url, timeout=10, stream=True, headers=None, proxies=None):
+    def fake_get(url, timeout=10, stream=True, headers=None, proxies=None, verify=True):
         return FakeResponse(b"a" * 10)
 
     monkeypatch.setattr(download_module.network.requests, "get", fake_get)
@@ -205,11 +207,11 @@ def test_http_client_uses_proxies_round_robin(monkeypatch):
     client_module = importlib.import_module("tools.http.client")
     captured = []
 
-    def fake_download_source(source, policy, storage=None, headers=None, proxies=None):
-        captured.append(proxies)
+    def fake_download_with_context(source, ctx, storage=None):
+        captured.append(ctx.proxy)
         return DownloadResult(status="downloaded", content="ok", content_type="text/plain")
 
-    monkeypatch.setattr(client_module, "download_source", fake_download_source)
+    monkeypatch.setattr(client_module, "download_with_context", fake_download_with_context)
     monkeypatch.setattr(client_module.RobotsDelayPolicy, "is_allowed", lambda self, url, respect_override=None: True)
     monkeypatch.setattr(client_module.RobotsDelayPolicy, "wait", lambda self, url, delay_override=None: None)
 
@@ -239,10 +241,10 @@ def test_http_client_respect_robots_override(monkeypatch):
     monkeypatch.setattr(client_module.RobotsDelayPolicy, "is_allowed", fake_is_allowed)
     monkeypatch.setattr(client_module.RobotsDelayPolicy, "wait", lambda self, url, delay_override=None: None)
 
-    def fake_download_source(source, policy, storage=None, headers=None, proxies=None):
+    def fake_download_with_context(source, ctx, storage=None):
         return DownloadResult(status="downloaded", content="ok", content_type="text/plain")
 
-    monkeypatch.setattr(client_module, "download_source", fake_download_source)
+    monkeypatch.setattr(client_module, "download_with_context", fake_download_with_context)
 
     client = client_module.HttpClient(
         policy=NetworkPolicy(enforce_https=False, block_private=False),
@@ -255,3 +257,47 @@ def test_http_client_respect_robots_override(monkeypatch):
     res = client.fetch({"url": "http://example.com", "type": "txt", "overrides": {"respect_robots": False}})
     assert res.status == "downloaded"
     assert calls["allowed"][0] is False
+
+
+def test_http_client_blocks_private_dns_resolution(monkeypatch):
+    client_module = importlib.import_module("tools.http.client")
+    network_module = importlib.import_module("tools.http.network")
+
+    # Force la résolution à retourner une IP privée
+    monkeypatch.setattr(network_module, "resolve_host_ips", lambda host: ["192.168.0.10"])
+    # Évite l'appel réseau
+    monkeypatch.setattr(client_module.RobotsDelayPolicy, "is_allowed", lambda self, url, respect_override=None: True)
+    monkeypatch.setattr(client_module.RobotsDelayPolicy, "wait", lambda self, url, delay_override=None: None)
+
+    client = client_module.HttpClient(
+        policy=NetworkPolicy(enforce_https=False, block_private=True),
+        auth_conf={},
+        respect_robots=False,
+        crawl_delay=0,
+    )
+
+    res = client.fetch({"url": "http://example.com", "type": "txt"})
+
+    assert res.status == "error"
+    assert "réseau privé" in (res.error or "").lower()
+
+
+def test_http_client_user_agent_and_proxy_increment_thread_safe():
+    client_module = importlib.import_module("tools.http.client")
+
+    client = client_module.HttpClient(
+        policy=NetworkPolicy(enforce_https=False, block_private=False),
+        auth_conf={},
+        respect_robots=False,
+        crawl_delay=0,
+        user_agents=["ua"],
+        proxies=["http://proxy"],
+    )
+
+    calls = 200
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        list(executor.map(lambda _: client._next_user_agent(), range(calls)))
+        list(executor.map(lambda _: client._next_proxy(), range(calls)))
+
+    assert client._ua_idx == calls
+    assert client._proxy_idx == calls

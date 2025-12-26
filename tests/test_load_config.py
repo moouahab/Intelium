@@ -99,3 +99,28 @@ def test_load_yaml_config_with_include(tmp_path):
     # merge récursif : options console conservée, fichier ajouté
     assert config["logging"]["options"]["console"] is True
     assert config["logging"]["options"]["file"] == "logs/app.log"
+
+
+def test_load_yaml_config_merges_lists(tmp_path):
+    base_config = """
+    include:
+      - extra.yaml
+    sources:
+      - name: BASE
+        url: https://base.example
+    """
+    include_config = """
+    sources:
+      - name: EXTRA
+        url: https://extra.example
+    """
+    conf_path = tmp_path / "config" / "conf.yaml"
+    include_path = tmp_path / "config" / "extra.yaml"
+    include_path.parent.mkdir(parents=True, exist_ok=True)
+    conf_path.parent.mkdir(parents=True, exist_ok=True)
+    conf_path.write_text(base_config)
+    include_path.write_text(include_config)
+
+    config = load_yaml_config(conf_path)
+
+    assert [s["name"] for s in config["sources"]] == ["BASE", "EXTRA"]

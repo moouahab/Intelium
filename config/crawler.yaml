@@ -5,12 +5,8 @@ crawler:
   allow_domains: []   # facultatif, sinon reuse allowlist réseau
   respect_robots: true
   crawl_delay_seconds: 1
-  max_concurrent: 1   # placeholder, monothread actuellement
+  max_concurrent: 2   # légère parallélisation sûre (verrous activés)
   user_agent: "CTI-Scraper/1.0 (+https://example.com/cti-scraper)"
   request_timeout_seconds: 10
   retry_attempts: 2
   retry_backoff_seconds: 2
-  sources:
-    - name: "Example Source"
-      url: "https://example.com/cti-feed"
-      type: "rss" 
