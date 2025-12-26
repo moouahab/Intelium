@@ -242,8 +242,8 @@ secret
 data/cache.json
 data/cache_sites/
 data/health.json
-logs/
-reports/
+data/logs/
+data/sandbox/
 docs/html/
 docs/xml/
 docs/pdf/
