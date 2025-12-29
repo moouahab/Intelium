@@ -9,6 +9,8 @@ from tools.ai_pipeline import LangGraphRunner
 from tools.ai_runner import run_cli_llm
 from tools.ai import PromptConfig, AiCommandPlan, build_command_plan
 from tools.scorer import score_results
+import re
+from typing import Dict, Any, List
 
 
 def _run_llm(command: str, prompt: str, timeout: int = 120, pass_prompt_as_arg: bool = False, prompt_via_file: bool = False) -> str:
@@ -114,10 +116,15 @@ def generate_ai_report(results: List[Dict[str, Any]], ai_conf: dict, logger=None
     """
     if not ai_conf or not ai_conf.get("enabled"):
         return None
+    # Filtre optionnel sur vulnérabilités seulement
+    filt_conf = ai_conf.get("filter") or {}
+    if filt_conf.get("vulnerability_only"):
+        results = _filter_vuln_only(results)
     scoring_conf = ai_conf.get("scoring") or {}
     scored_results = score_results(
         results,
         weights=scoring_conf.get("weights"),
+        per_type_weights=scoring_conf.get("per_type"),
         cvss_conf=scoring_conf.get("cvss"),
     )
     prompt_conf = _make_prompt_conf(ai_conf, "ai_report_template")
@@ -186,3 +193,16 @@ def generate_ai_report(results: List[Dict[str, Any]], ai_conf: dict, logger=None
     retry_delay = float(ai_conf.get("retry_delay", 0))
     text = _run_with_retries(plan, prompt, output_path, retries, retry_delay, logger)
     return output_path if text else None
+def _is_vuln_entry(res: Dict[str, Any]) -> bool:
+    keywords = res.get("keywords") or {}
+    if keywords.get("vulnerability"):
+        return True
+    extracted = res.get("extracted") or []
+    for item in extracted:
+        if isinstance(item, str) and re.search(r"\bCVE-\d{4}-\d{4,7}\b", item, flags=re.IGNORECASE):
+            return True
+    return False
+
+
+def _filter_vuln_only(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    return [r for r in results if _is_vuln_entry(r)]

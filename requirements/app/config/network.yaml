@@ -32,7 +32,7 @@ network:
   scanner: yara             # none|yara|av
   scan_command: "yara -s rules.yar {file}"  # commande explicite YARA
   scan_timeout: 60
-  sandbox_dir: data/sandbox  # répertoire confiné pour tous les téléchargements
+  sandbox_dir: /tmp/cti-sandbox  # répertoire confiné pour tous les téléchargements (éphémère)
   metrics_path: data/health.json  # trace les fetch (succès/erreurs/durée) dans health.json
   # pinned_fingerprints:
   #   - "sha256fingerprinthex"

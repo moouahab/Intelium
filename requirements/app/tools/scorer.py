@@ -51,7 +51,7 @@ def _priority_from_score(score: int) -> str:
     return "low"
 
 
-def _compute_score(res: Dict[str, Any], weights: Dict[str, int]) -> int:
+def _compute_score(res: Dict[str, Any], weights: Dict[str, int], per_type: Optional[Dict[str, Dict[str, int]]] = None) -> int:
     score = 0
     status = res.get("status")
     if status == "downloaded":
@@ -62,8 +62,11 @@ def _compute_score(res: Dict[str, Any], weights: Dict[str, int]) -> int:
         score += 5
 
     keywords = res.get("keywords") or {}
+    # poids par type (optionnel)
+    source_type = res.get("type")
+    type_weights = per_type.get(source_type, {}) if per_type else {}
     for cat, hits in keywords.items():
-        weight = weights.get(cat, weights.get("default", 0))
+        weight = type_weights.get(cat, weights.get(cat, weights.get("default", 0)))
         if hits:
             score += weight
 
@@ -77,6 +80,7 @@ def _compute_score(res: Dict[str, Any], weights: Dict[str, int]) -> int:
 def score_results(
     results: List[Dict[str, Any]],
     weights: Optional[Dict[str, int]] = None,
+    per_type_weights: Optional[Dict[str, Dict[str, int]]] = None,
     cvss_conf: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     """
@@ -91,7 +95,7 @@ def score_results(
     med_thr = float(cvss_conf.get("medium_threshold", 7.0)) if cvss_enabled else None
     for res in results:
         entry = deepcopy(res)
-        s = _compute_score(entry, weights)
+        s = _compute_score(entry, weights, per_type=per_type_weights)
         entry["score"] = s
         has_malware = bool(entry.get("keywords", {}).get("malware"))
         has_cve = _has_cve(entry.get("extracted") or [])

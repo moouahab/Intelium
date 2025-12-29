@@ -59,3 +59,16 @@ sudo systemctl enable --now cti-scraper
 - Taille max (`max_bytes`) dépassée : augmenter la limite dans `network.yaml` ou l’override de la source.
 - Rapport IA : vérifier la commande (`ollama`, `llama`…) ou désactiver via `--no-ai-report`.
 - Chemins manquants : vérifier `detail_dir`, `output.file`, `prompt_path` (le validateur remonte les erreurs).
+
+## Docker / Compose (run rapide)
+- Build & run (scraper + métriques HTTP) :
+  ```bash
+  docker compose up --build
+  ```
+  Le scraper tourne avec la config par défaut, sans IA. Les métriques sont exposées sur `http://localhost:9000/metrics` et `/health`.
+- Volumes montés : `config/`, `data/`, `logs/`, `reports/`, `docs/` pour modifier/inspecter facilement.
+- Activer l’IA : modifiez `docker-compose.yml` (retirez `--no-ai-report` de la commande) et assurez-vous que la commande IA est disponible dans l’image.
+- Ressources : ajustez les limites CPU/RAM via la section `deploy` (commentée).
+- Services additionnels :
+  - `mongo` : base MongoDB pour le cache/résultats (config via `MONGO_URI` ou Vault).
+  - `vault` : Vault dev (sans secrets par défaut), à configurer via env `VAULT_ADDR`/`VAULT_TOKEN` et un secret KV v2 (`VAULT_SECRET_PATH`).

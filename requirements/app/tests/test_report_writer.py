@@ -124,3 +124,22 @@ def test_ai_report_autodetect_codex(tmp_path, monkeypatch):
     out = tmp_path / "ai.md"
     res = generate_ai_report([{"url": "http://x"}], {"enabled": True, "command": "", "output": out})
     assert res == out
+
+
+def test_report_writer_additional_formats(tmp_path):
+    writer = ReportWriter(
+        {
+            "file": tmp_path / "report.md",
+            "detail_dir": tmp_path / "sources",
+            "format": "markdown",
+            "additional_formats": ["json"],
+            "split_per_source": True,
+        }
+    )
+    results = _sample_results()
+    writer.write(results)
+
+    assert (tmp_path / "report.md").exists()
+    assert (tmp_path / "report.json").exists()
+    # detail JSON should be under sources/json
+    assert (tmp_path / "sources" / "json" / "root.json").exists()

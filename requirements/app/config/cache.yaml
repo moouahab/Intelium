@@ -1,0 +1,8 @@
+cache:
+  file: data/cache.json
+  auto_save: true
+  per_site: true
+  track_fields: ["url", "type","hash", "date"]
+  backend: mongo         # mongo|file (si MONGO_URI défini, mongo sera choisi)
+  mongo_db: cti
+  mongo_collection: cache

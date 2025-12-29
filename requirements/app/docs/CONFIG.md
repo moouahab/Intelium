@@ -48,10 +48,13 @@
 
 ## Sortie / Rapport (`config/output.yaml`)
 - `format` : `markdown` ou `json`, `file` : chemin principal, `split_per_source` + `detail_dir`.
+- `additional_formats` : liste optionnelle de formats supplémentaires à générer (ex: `["json"]`) en plus du format principal.
+- `filter.vulnerability_only` : si true, filtre les résultats pour ne garder que les entrées avec vulnérabilité (keywords vulnérabilité ou CVE).
 - AI report (`ai_report`) :
   - `enabled`, `command` (ou auto-détection), `prompt_template`/`prompt_path`, `timeout`.
   - `analysis` : étape IA intermédiaire optionnelle (prompt dédié).
-  - `scoring` : poids configurables (malware/vulnerability/attack_technique/default) et CVSS (seuils high/medium). Priorité “high” forcée si malware + CVE.
+  - `scoring` : poids configurables (malware/vulnerability/attack_technique/default) + `per_type` (poids par type) et CVSS (seuils high/medium). Priorité “high” forcée si malware + CVE.
+  - `filter.vulnerability_only` : filtre côté IA pour ne garder que les entrées vulnérabilité (keywords vulnérabilité ou CVE).
 - Logging : `config/logging.yaml` (niveau, fichier, rotation).
 
 ## Auth (`config/auth.yaml`)
@@ -72,7 +75,11 @@
 - `data/health.json` : enrichi par l’orchestrateur (runs) et par les fetch individuels (si `metrics_path` configuré). Contient compteurs succès/échec et somme des durées de fetch.
 - `scripts/orchestrator.py` : lance le scraper périodiquement avec enregistrement des métriques.
 - `scripts/health_summary.py` : résume `health.json` ou exporte en Prometheus (option `--prometheus`).
+- `scripts/metrics_server.py` : expose `/metrics` (Prometheus) et `/health` (JSON) à partir de `health.json`.
 - **Sécurité/ops** : surveillez les logs et `health.json` pour détecter des échecs ou des domaines inattendus.
+- Vault : un service Vault (dev) est présent dans docker-compose pour stocker des secrets ; aucune valeur n'est hardcodée, à configurer via variables d'environnement.
+- Secrets : `MONGO_URI` (et autres) peuvent être injectés via env ou Vault (`VAULT_ADDR`, `VAULT_TOKEN`, `VAULT_SECRET_PATH`; clé lue dans un secret KV v2).
+- Mongo : service optionnel (compose) pour persister le cache/résultats. Activez `backend: mongo` dans `config/cache.yaml` et fournissez `MONGO_URI` (env ou Vault).
 
 ## Getting started
 1. Installer les dépendances : `make deps`

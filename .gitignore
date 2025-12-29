@@ -239,6 +239,21 @@ config/auth.yaml
 secret
 
 # Project artefacts
+# (nouvelle arbo sous requirements/app)
+requirements/app/data/cache.json
+requirements/app/data/cache_sites/
+requirements/app/data/health.json
+requirements/app/data/logs/
+requirements/app/data/sandbox/
+requirements/app/logs/
+requirements/app/reports/
+requirements/app/docs/html/
+requirements/app/docs/xml/
+requirements/app/docs/pdf/
+requirements/app/docs/csv/
+requirements/app/docs/image/
+requirements/app/docs/txt/
+# anciennes racines (si existantes encore)
 data/cache.json
 data/cache_sites/
 data/health.json

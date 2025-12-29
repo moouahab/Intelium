@@ -3,7 +3,7 @@ output:
     enabled: true
     mode: cli                 # mode CLI direct
     langgraph_llm_command: "" # désactivé
-    command: "codex exec --skip-git-repo-check --ask-for-approval on-request --sandbox workspace-write -"  # CLI codex exec (non interactif) lit le prompt via stdin et demande l'approbation si besoin
+    command: "python scripts/groq_llm.py"  # LLM externe (Groq) lit le prompt via stdin
     output: reports/ai_report.md
     timeout: 1000
     retries: 1
@@ -24,7 +24,7 @@ output:
         medium_threshold: 7.0
     analysis:                 # agent IA n°1 : extraction factuelle
       enabled: true
-      command: "codex exec --skip-git-repo-check --ask-for-approval on-request --sandbox workspace-write -"
+      command: "python scripts/groq_llm.py"
       prompt_path: config/prompt.yaml
       template_key: ai_analysis_template
       output: reports/ai_analysis.md
@@ -32,5 +32,7 @@ output:
       pass_prompt_as_arg: false
       prompt_via_file: true
   format: markdown
+  additional_formats:
+    - json
   file: reports/threat_intel_report.md
   split_per_source: true

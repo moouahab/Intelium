@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+  cti-scraper:
+    build:
+      context: ./requirements/app
+      dockerfile: Dockerfile
+    container_name: cti-scraper
+    working_dir: /app
+    command: ["python", "main.py", "--config", "config/conf.yaml", "--no-ai-report"]
+    volumes:
+      - ./requirements/app:/app
+      - ./requirements/app/data:/app/data
+      - ./requirements/app/logs:/app/logs
+      - ./requirements/app/reports:/app/reports
+      - ./requirements/app/docs:/app/docs
+    environment:
+      PYTHONPATH: /app
+
+  metrics:
+    build:
+      context: ./requirements/app
+      dockerfile: Dockerfile
+    container_name: cti-metrics
+    working_dir: /app
+    command: ["python", "scripts/metrics_server.py", "--file", "data/health.json", "--port", "9000"]
+    volumes:
+      - ./requirements/app/data:/app/data
+    ports:
+      - "9000:9000"
+    environment:
+      PYTHONPATH: /app
+    depends_on:
+      - cti-scraper
+
+  mongo:
+    image: mongo:6
+    container_name: cti-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./requirements/mangodb/data:/data/db
+    environment: {}
+
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: cti-vault
+    restart: unless-stopped
+    ports:
+      - "8200:8200"
+    environment: {}
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - ./requirements/app/vault:/vault/file
+
+volumes:
+  pgdata:

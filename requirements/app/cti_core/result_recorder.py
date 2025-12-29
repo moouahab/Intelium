@@ -2,6 +2,7 @@ import threading
 from typing import Any
 from tools.cache import CacheManager, CacheRegistry
 from cti_core.Source import Source
+from tools.storage_mongo import save_result
 
 
 class ResultRecorder:
@@ -38,6 +39,7 @@ class ResultRecorder:
 
     def record_result(self, source: Source, result, extracted, keyword_hits: dict | None = None) -> None:
         with self._lock:
+            saved_path = str(result.saved_path) if getattr(result, "saved_path", None) else None
             self.cache.record_scrape(
                 url=source.url,
                 source_type=source.type,
@@ -45,20 +47,24 @@ class ResultRecorder:
                 hash_value=source.hash,
                 date=source.date,
                 error=result.error,
-                saved_path=str(result.saved_path) if getattr(result, "saved_path", None) else None,
+                saved_path=saved_path,
             )
-            self.results.append(
-                {
-                    "url": source.url,
-                    "name": source.name,
-                    "type": source.type,
-                    "status": result.status,
-                    "error": result.error,
-                    "saved_path": str(result.saved_path) if getattr(result, "saved_path", None) else None,
-                    "extracted": extracted,
-                    **({"keywords": keyword_hits} if keyword_hits else {}),
-                }
-            )
+            record = {
+                "url": source.url,
+                "name": source.name,
+                "type": source.type,
+                "status": result.status,
+                "error": result.error,
+                "saved_path": saved_path,
+                "extracted": extracted,
+            }
+            if keyword_hits:
+                record["keywords"] = keyword_hits
+            self.results.append(record)
+            try:
+                save_result(record)
+            except Exception:
+                pass
 
     def check_or_record_cache_hit(self, url: str, source_type: str, name: str) -> bool:
         """
