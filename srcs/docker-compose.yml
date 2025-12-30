@@ -1,0 +1,116 @@
+services:
+  cti-scraper:
+    build:
+      context: ./requirements/app
+      dockerfile: Dockerfile
+    container_name: cti-scraper
+    restart: unless-stopped
+    working_dir: /app
+    command: ["python", "scripts/orchestrator.py", "--config", "config/conf.yaml", "--metrics", "data/health.json"]
+    env_file:
+      - ../.env
+    volumes:
+      - ./requirements/app:/app
+      - ./requirements/app/data:/app/data
+      - ./requirements/app/logs:/app/logs
+      - ./requirements/app/reports:/app/reports
+      - ./requirements/app/docs:/app/docs
+    environment:
+      PYTHONPATH: /app
+
+  metrics:
+    build:
+      context: ./requirements/app
+      dockerfile: Dockerfile
+    container_name: cti-metrics
+    restart: unless-stopped
+    working_dir: /app
+    command: ["python", "scripts/metrics_server.py", "--file", "data/health.json", "--port", "9000"]
+    env_file:
+      - ../.env
+    volumes:
+      - ./requirements/app/data:/app/data
+    ports:
+      - "9000:9000"
+    environment:
+      PYTHONPATH: /app
+    depends_on:
+      - cti-scraper
+
+  mongo:
+    image: mongo:6
+    container_name: cti-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./requirements/mangodb/data:/data/db
+    environment: {}
+
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: cti-vault
+    restart: unless-stopped
+    ports:
+      - "8200:8200"
+    environment: {}
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - ./requirements/app/vault:/vault/file
+
+  codex:
+    build:
+      context: ./requirements/app
+      dockerfile: Dockerfile
+    container_name: cti-codex
+    working_dir: /app
+    command: ["sleep", "infinity"]
+    env_file:
+      - ../.env
+    volumes:
+      - ./requirements/app:/app
+      - ./requirements/app/data:/app/data
+      - ./requirements/app/logs:/app/logs
+      - ./requirements/app/reports:/app/reports
+      - ./requirements/app/docs:/app/docs
+    environment:
+      PYTHONPATH: /app
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
+      GROQ_MAX_TOKENS: ${GROQ_MAX_TOKENS:-1024}
+      GROQ_TEMPERATURE: ${GROQ_TEMPERATURE:-0.2}
+    depends_on:
+      - cti-scraper
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cti-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - metrics
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: cti-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  pgdata:
+  prometheus_data:
+  grafana_data:
