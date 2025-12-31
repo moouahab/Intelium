@@ -10,6 +10,7 @@ import argparse
 import json
 import os
 import sys
+import time
 
 import requests
 
@@ -19,6 +20,8 @@ def main():
     parser.add_argument("--model", default=os.environ.get("MISTRAL_MODEL", "mistral-large-latest"))
     parser.add_argument("--max-tokens", type=int, default=int(os.environ.get("MISTRAL_MAX_TOKENS", 1024)))
     parser.add_argument("--temperature", type=float, default=float(os.environ.get("MISTRAL_TEMPERATURE", 0.2)))
+    parser.add_argument("--timeout", type=int, default=int(os.environ.get("MISTRAL_TIMEOUT", 180)))
+    parser.add_argument("--retries", type=int, default=int(os.environ.get("MISTRAL_RETRIES", 2)))
     args = parser.parse_args()
 
     api_key = os.environ.get("MISTRAL_API_KEY")
@@ -38,22 +41,29 @@ def main():
         "temperature": args.temperature,
     }
 
-    try:
-        resp = requests.post(
-            "https://api.mistral.ai/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            json=payload,
-            timeout=60,
-        )
-    except Exception as exc:
-        print(f"Erreur réseau vers Mistral: {exc}", file=sys.stderr)
-        sys.exit(1)
+    last_error = None
+    for attempt in range(args.retries + 1):
+        try:
+            resp = requests.post(
+                "https://api.mistral.ai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+                timeout=args.timeout,
+            )
+        except Exception as exc:
+            last_error = exc
+            time.sleep(2 * (attempt + 1))
+            continue
 
-    if resp.status_code != 200:
-        print(f"Echec Mistral ({resp.status_code}): {resp.text}", file=sys.stderr)
+        if resp.status_code == 200:
+            break
+        last_error = f"HTTP {resp.status_code}: {resp.text}"
+        time.sleep(2 * (attempt + 1))
+    else:
+        print(f"Erreur réseau vers Mistral: {last_error}", file=sys.stderr)
         sys.exit(1)
 
     data = resp.json()

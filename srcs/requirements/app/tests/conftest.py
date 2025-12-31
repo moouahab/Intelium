@@ -4,7 +4,15 @@ from tools.download_types import NetworkPolicy, StorageTarget, DownloadResult
 
 
 class DummyConfigModel:
-    def __init__(self, sources, tmp_path: Path, max_concurrent: int = 1, keywords: dict | None = None):
+    def __init__(
+        self,
+        sources,
+        tmp_path: Path,
+        max_concurrent: int = 1,
+        keywords: dict | None = None,
+        global_max_pages: int | None = None,
+        global_max_bytes: int | None = None,
+    ):
         self.source_objects = sources
         self.yaml_config = {
             "crawler": {
@@ -24,6 +32,8 @@ class DummyConfigModel:
             "respect_robots": False,
             "crawl_delay_seconds": 0,
             "max_concurrent": max_concurrent,
+            "global_max_pages": global_max_pages,
+            "global_max_bytes": global_max_bytes,
         }
         self.http_settings = {
             "respect_robots": False,
@@ -50,8 +60,21 @@ class DummyConfigModel:
 
 @pytest.fixture
 def dummy_config_model(tmp_path):
-    def _build(sources, max_concurrent: int = 1, keywords: dict | None = None):
-        return DummyConfigModel(sources, tmp_path, max_concurrent=max_concurrent, keywords=keywords)
+    def _build(
+        sources,
+        max_concurrent: int = 1,
+        keywords: dict | None = None,
+        global_max_pages: int | None = None,
+        global_max_bytes: int | None = None,
+    ):
+        return DummyConfigModel(
+            sources,
+            tmp_path,
+            max_concurrent=max_concurrent,
+            keywords=keywords,
+            global_max_pages=global_max_pages,
+            global_max_bytes=global_max_bytes,
+        )
 
     return _build
 

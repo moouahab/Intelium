@@ -9,6 +9,25 @@ from tools.logger_utils import setup_logger, log_structured
 from tools.report import write_report
 from cti_core.cli import render_progress, print_summary
 from tools.ai_report import generate_ai_report
+from urllib.parse import urlparse
+
+
+def _validate_allowlist(config_model: ConfigModel, logger) -> bool:
+    allow = config_model.network_policy.allow_domains or set()
+    if not allow:
+        allow = config_model.crawler_settings.get("allow_domains") or set()
+    if not allow:
+        return True
+    invalid = []
+    for src in config_model.source_objects:
+        host = urlparse(src.url).hostname
+        if not host or host not in allow:
+            invalid.append((src.name or src.url, src.url, host))
+    if invalid:
+        msg = "; ".join([f"{name} ({url}) host={host}" for name, url, host in invalid])
+        logger.error("Sources hors allowlist : %s", msg)
+        return False
+    return True
 
 
 def build_cache_manager(cache_conf: dict) -> CacheManager | CacheRegistry:
@@ -34,6 +53,9 @@ def run(config_path: str = "config/conf.yaml", force_ai_report: bool | None = No
             logger.error("Erreur configuration : %s", error)
         log_structured(logger, logging.ERROR, "config_errors", errors=config_model.errors)
         logger.error("Arrêt du run : configuration invalide.")
+        return
+    if not _validate_allowlist(config_model, logger):
+        logger.error("Arrêt du run : allowlist non respectée.")
         return
 
     json_config_str = get_config_as_json_string(config_model.yaml_config)

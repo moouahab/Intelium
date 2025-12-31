@@ -46,7 +46,8 @@ def save_result(result: Dict[str, Any]) -> None:
     if coll is None:
         return
     try:
-        coll.insert_one(result)
+        # insère une copie pour éviter que pymongo n'injecte _id dans le dict original (utilisé pour le JSON final)
+        coll.insert_one(dict(result))
     except Exception:
         # On ignore silencieusement pour ne pas casser le flux principal
         return

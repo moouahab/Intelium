@@ -16,6 +16,8 @@ class CacheEntry:
     status: Optional[str] = None
     error: Optional[str] = None
     saved_path: Optional[str] = None
+    extracted: Optional[list] = None
+    keywords: Optional[dict] = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "CacheEntry":
@@ -27,6 +29,8 @@ class CacheEntry:
             status=data.get("status"),
             error=data.get("error"),
             saved_path=data.get("saved_path"),
+            extracted=data.get("extracted"),
+            keywords=data.get("keywords"),
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -83,10 +87,22 @@ class CacheManager:
         date: Optional[str] = None,
         error: Optional[str] = None,
         saved_path: Optional[str] = None,
+        extracted: Optional[list] = None,
+        keywords: Optional[dict] = None,
     ) -> CacheEntry:
         if date is None:
             date = datetime.now(timezone.utc).isoformat()
-        entry = CacheEntry( url=url, type=source_type, hash=hash_value, date=date, status=status, error=error, saved_path=saved_path)
+        entry = CacheEntry(
+            url=url,
+            type=source_type,
+            hash=hash_value,
+            date=date,
+            status=status,
+            error=error,
+            saved_path=saved_path,
+            extracted=extracted,
+            keywords=keywords,
+        )
         self.update(entry)
         return entry
 
@@ -144,6 +160,8 @@ class CacheRegistry:
         date: Optional[str] = None,
         error: Optional[str] = None,
         saved_path: Optional[str] = None,
+        extracted: Optional[list] = None,
+        keywords: Optional[dict] = None,
     ) -> CacheEntry:
         return self._get_manager(url).record_scrape(
             url=url,
@@ -153,6 +171,8 @@ class CacheRegistry:
             date=date,
             error=error,
             saved_path=saved_path,
+            extracted=extracted,
+            keywords=keywords,
         )
 
     def has_changed(self, url: str, current_hash: Optional[str]) -> bool:

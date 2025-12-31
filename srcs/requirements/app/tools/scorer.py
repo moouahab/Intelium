@@ -77,6 +77,26 @@ def _compute_score(res: Dict[str, Any], weights: Dict[str, int], per_type: Optio
     return score
 
 
+def compute_confidence(res: Dict[str, Any]) -> float:
+    """
+    Heuristique simple de confiance (0..1) basée sur le statut, les extraits et les mots-clés.
+    """
+    status = (res.get("status") or "").lower()
+    extracted = res.get("extracted") or []
+    keywords = res.get("keywords") or {}
+    conf = 0.1
+    if status == "downloaded":
+        conf += 0.5
+    elif status == "skipped-cache":
+        conf += 0.3
+    elif status in {"http-error", "error", "blocked-robots", "offline"}:
+        conf -= 0.1
+    conf += min(len(extracted) * 0.02, 0.3)
+    if keywords.get("vulnerability") or keywords.get("malware"):
+        conf += 0.1
+    return max(0.0, min(1.0, conf))
+
+
 def score_results(
     results: List[Dict[str, Any]],
     weights: Optional[Dict[str, int]] = None,

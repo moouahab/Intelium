@@ -10,6 +10,7 @@ from tools.parsers.txt_parser import parse_txt
 from tools.parsers.text_utils import ensure_text
 from tools.ioc_extractor import extract_iocs
 from tools.content_sanitizer import sanitize_html, sanitize_xml
+from tools.parsers.certkev import extract_certkev_entries, is_certkev_source
 from copy import deepcopy
 from typing import Optional
 
@@ -55,8 +56,40 @@ def _merge_conf(base: dict, override: dict | None) -> dict:
     return merged
 
 
-def _post_process(results: List[str], conf: Dict[str, Any]) -> List[str]:
-    if conf.get("deduplicate"):
+def _normalize_results(results: List[Any]) -> List[str]:
+    normed: List[str] = []
+    seen = set()
+    for item in results:
+        if not isinstance(item, str):
+            continue
+        text = " ".join(item.strip().split())
+        if not text:
+            continue
+        key = text.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        normed.append(text)
+    return normed
+
+
+def _filter_cert_like(results: List[str], source_name: str | None) -> List[str]:
+    if not source_name:
+        return results
+    name = source_name.lower()
+    if not any(tok in name for tok in ["cert", "kev", "cisa"]):
+        return results
+    import re
+
+    keep_re = re.compile(r"(CVE-\d{4}-\d{4,7}|CERTFR-\d{4}-ALE|KEV|CISA)", re.IGNORECASE)
+    filtered = [r for r in results if keep_re.search(r)]
+    return filtered or results
+
+
+def _post_process(results: List[str], conf: Dict[str, Any], source_name: str | None = None) -> List[str]:
+    results = _normalize_results(results)
+    results = _filter_cert_like(results, source_name)
+    if conf.get("deduplicate", True):
         seen = set()
         deduped = []
         for item in results:
@@ -135,8 +168,12 @@ def parse_content(
     if not parser_fn or content is None:
         return []
     # Normalise l'encodage sur les contenus texte standards
+    raw_text_cache: str | None = None
     if source_type in {"api", "xml", "csv", "txt"} and isinstance(content, bytes):
         content = ensure_text(content, encoding=type_conf.get("encoding"))
+        raw_text_cache = content
+    elif isinstance(content, str):
+        raw_text_cache = content
     # Sanitize en amont si demandé (structure conservée)
     if type_conf.get("sanitize"):
         if source_type == "html" and isinstance(content, str):
@@ -145,6 +182,13 @@ def parse_content(
             content = sanitize_xml(content)
     try:
         results = parser_fn(content, type_conf)
+        # Extraction CERT/KEV contextualisée si activée ou source identifiée comme telle
+        if type_conf.get("certkev") or is_certkev_source(source_name):
+            cert_raw = raw_text_cache
+            if cert_raw is None and isinstance(content, (bytes, str)):
+                cert_raw = ensure_text(content, encoding=type_conf.get("encoding"))
+            if cert_raw:
+                results = results + extract_certkev_entries(cert_raw)
         cvss_score = None
         if source_type == "api":
             cvss_score = _extract_cvss_if_any(results, content)
@@ -155,6 +199,6 @@ def parse_content(
             results = results + extract_iocs(texts, type_conf.get("extract_iocs"))
         if cvss_score is not None:
             results = [f"CVSS:{cvss_score}"] + results
-        return _post_process(results, type_conf)
+        return _post_process(results, type_conf, source_name=source_name)
     except Exception:
         return []

@@ -10,3 +10,4 @@ pytesseract
 lxml
 pymongo
 hvac
+mongomock

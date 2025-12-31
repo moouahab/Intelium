@@ -118,7 +118,18 @@ class HttpClient:
                 self._robots_delay.wait(url, delay_override=ctx.crawl_delay)
                 result = download_with_context(source, ctx=ctx, storage=storage)
                 if self.metrics_path:
-                    record_fetch(self.metrics_path, elapsed(), result.status)
+                    reason = None
+                    if result.status == "blocked-robots":
+                        reason = "blocked-robots"
+                    elif result.status == "http-error" and result.status_code:
+                        reason = f"http-{result.status_code}"
+                    elif result.status == "offline":
+                        reason = "offline"
+                    elif result.error:
+                        reason = (result.error[:80] if isinstance(result.error, str) else str(result.error)) or result.status
+                    else:
+                        reason = result.status
+                    record_fetch(self.metrics_path, elapsed(), result.status, reason=reason, size_bytes=result.size_bytes)
                 if not self._should_retry(result, attempt):
                     return result
                 attempt += 1
@@ -127,6 +138,8 @@ class HttpClient:
 
     def fetch(self, source: dict, storage: Optional[StorageTarget] = None) -> DownloadResult:
         url = source.get("url")
+        if getattr(self.policy, "offline", False):
+            return DownloadResult(status="offline", content=None, error="Mode offline actif (cache uniquement)")
         ctx = build_request_context(
             source,
             self.policy,

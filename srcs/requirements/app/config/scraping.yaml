@@ -12,6 +12,7 @@ data_scraper:
     errors: "log"
     extract_iocs: true   # extrait CVE/URL/IP des contenus HTML et liens
     sanitize: false      # sanitation légère (scripts/commentaires retirés)
+    # certkev: true      # active l'extraction contextuelle pour les bulletins CERT/KEV (auto si nom contient cert/kev/cisa)
 
   api:
     parse_as: "json"
@@ -62,3 +63,14 @@ data_scraper:
 
   ignore:
     reason: "This file is not relevant to threat intelligence collection."
+
+  per_source:
+    CERT-FR:
+      html:
+        certkev: true
+    CERT-FR-RSS:
+      xml:
+        certkev: true
+    CISA-KEV:
+      api:
+        certkev: true

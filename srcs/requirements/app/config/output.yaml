@@ -3,19 +3,28 @@ output:
     enabled: true
     mode: cli
     langgraph_llm_command: ""
-    command: "python scripts/mistral_llm.py"
+    command: "python3 scripts/mistral_llm.py"
     output: reports/rapport.md          # rapport IA fusionné dans le même fichier principal
-    timeout: 1000
-    retries: 1
-    retry_delay: 2
-    prompt_template: ""
+    timeout: 320                       # plus de temps pour finir le rapport
+    retries: 4
+    retry_delay: 5
+    prompt_template: ""                # utilise le template de prompt.yaml (ajusté)
     prompt_path: config/prompt.yaml
+    required_sections:
+      - "Résumé exécutif"
+      - "IOCs"
+      - "Vulnérabilités"
     pass_prompt_as_arg: false
     prompt_via_file: true
     # Limites pour éviter les prompts trop volumineux (ajustables si besoin)
-    max_results: 20
-    max_extracted_per_source: 20
-    max_extracted_chars: 400
+    max_results: 18
+    max_extracted_per_source: 18
+    max_extracted_chars: 800
+    fallback:
+      command: "python3 scripts/mistral_llm.py --model mistral-small-latest --max-tokens 4096"
+      timeout: 260
+      pass_prompt_as_arg: false
+      prompt_via_file: true
     scoring:
       weights:
         malware: 30
@@ -32,4 +41,5 @@ output:
   additional_formats:
     - json
   file: reports/rapport.md
+  detail_dir: reports/sources_user
   split_per_source: true

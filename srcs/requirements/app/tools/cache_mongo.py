@@ -61,6 +61,8 @@ class MongoCache:
         date: Optional[str] = None,
         error: Optional[str] = None,
         saved_path: Optional[str] = None,
+        extracted: Optional[list] = None,
+        keywords: Optional[dict] = None,
     ) -> CacheEntry:
         entry = CacheEntry(
             url=url,
@@ -70,6 +72,8 @@ class MongoCache:
             status=status,
             error=error,
             saved_path=saved_path,
+            extracted=extracted,
+            keywords=keywords,
         )
         coll = self._collection()
         if coll is not None:

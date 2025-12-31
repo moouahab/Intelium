@@ -9,6 +9,7 @@ from tools.ai_pipeline import LangGraphRunner
 from tools.ai_runner import run_cli_llm
 from tools.ai import PromptConfig, AiCommandPlan, build_command_plan
 from tools.scorer import score_results
+from tools.interfaces import AIProvider
 import re
 from typing import Dict, Any, List
 from copy import deepcopy
@@ -103,7 +104,84 @@ def _run_with_retries(
     return text
 
 
-def generate_ai_report(results: List[Dict[str, Any]], ai_conf: dict, logger=None) -> Optional[Path]:
+def _run_fallback(
+    ai_conf: dict,
+    prompt: str,
+    output_path: Path,
+    logger,
+) -> Optional[str]:
+    fallback = ai_conf.get("fallback") or {}
+    fb_command = fallback.get("command")
+    if not fb_command:
+        return None
+    fb_timeout = int(fallback.get("timeout", ai_conf.get("timeout", 120)))
+    fb_pass_arg = bool(fallback.get("pass_prompt_as_arg", False))
+    fb_prompt_via_file = bool(fallback.get("prompt_via_file", ai_conf.get("prompt_via_file", False)))
+    try:
+        return _run_cli_task(
+            fb_command,
+            prompt,
+            timeout=fb_timeout,
+            pass_prompt_as_arg=fb_pass_arg,
+            prompt_via_file=fb_prompt_via_file,
+            output_path=output_path,
+            logger=logger,
+            label="Rapport IA (fallback)",
+        )
+    except Exception as exc:
+        _log_warn(logger, "Echec fallback IA", exc)
+        return None
+
+
+def _run_local_autodetect(
+    prompt: str,
+    output_path: Path,
+    logger,
+    timeout: int = 120,
+    pass_prompt_as_arg: bool = False,
+    prompt_via_file: bool = False,
+) -> Optional[str]:
+    from tools.ai.command_plan import detect_local_llm
+
+    cmd = detect_local_llm()
+    if not cmd:
+        return None
+    try:
+        return _run_cli_task(
+            cmd,
+            prompt,
+            timeout=timeout,
+            pass_prompt_as_arg=pass_prompt_as_arg,
+            prompt_via_file=prompt_via_file,
+            output_path=output_path,
+            logger=logger,
+            label="Rapport IA (local autodetect)",
+        )
+    except Exception as exc:
+        _log_warn(logger, "Echec fallback LLM local", exc)
+        return None
+
+
+def _is_complete(text: Optional[str], required_markers: Optional[list[str]] = None, required_sections: Optional[list[str]] = None) -> bool:
+    if not text:
+        return False
+    markers = required_markers or ["FIN DU RAPPORT"]
+    lowered = text.lower()
+    for m in markers:
+        if m.lower() not in lowered:
+            return False
+    for sec in required_sections or []:
+        if sec.lower() not in lowered:
+            return False
+    return True
+
+
+def generate_ai_report(
+    results: List[Dict[str, Any]],
+    ai_conf: dict,
+    logger=None,
+    provider: AIProvider | None = None,
+) -> Optional[Path]:
     """
     ai_conf attend :
       - enabled: bool
@@ -117,6 +195,11 @@ def generate_ai_report(results: List[Dict[str, Any]], ai_conf: dict, logger=None
     """
     if not ai_conf or not ai_conf.get("enabled"):
         return None
+    if provider:
+        try:
+            return provider.generate(results, ai_conf, logger=logger)
+        except Exception as exc:
+            _log_warn(logger, "AI provider custom en échec, fallback plan par défaut", exc)
     # Réduction du payload pour éviter les prompts trop gros (413, etc.)
     max_results = _to_int(ai_conf.get("max_results", len(results) or 0), default=len(results) or 0) or len(results)
     max_extracted = _to_int(ai_conf.get("max_extracted_per_source", 30), default=30)
@@ -202,8 +285,31 @@ def generate_ai_report(results: List[Dict[str, Any]], ai_conf: dict, logger=None
 
     retries = max(1, int(ai_conf.get("retries", 1)))
     retry_delay = float(ai_conf.get("retry_delay", 0))
+    required_markers = ["FIN DU RAPPORT"]
+    required_sections = ai_conf.get("required_sections") or []
     text = _run_with_retries(plan, prompt, output_path, retries, retry_delay, logger)
-    return output_path if text else None
+    if not _is_complete(text, required_markers, required_sections):
+        _log_warn(logger, "Rapport IA incomplet, tentative fallback", Exception("rapport incomplet"))
+        text = _run_fallback(ai_conf, prompt, output_path, logger)
+    if not _is_complete(text, required_markers, required_sections):
+        text = _run_local_autodetect(
+            prompt,
+            output_path,
+            logger,
+            timeout=plan.timeout,
+            pass_prompt_as_arg=plan.pass_prompt_as_arg,
+            prompt_via_file=plan.prompt_via_file,
+        )
+    if not _is_complete(text, required_markers, required_sections):
+        if logger:
+            logger.warning("Rapport IA final incomplet : un résumé minimal sera écrit.")
+        try:
+            fallback_text = "Rapport IA non disponible. Synthèse minimale:\nFIN DU RAPPORT"
+            _write_text(output_path, fallback_text, logger, "Rapport IA (minimal)")
+            return output_path
+        except Exception:
+            return None
+    return output_path
 def _is_vuln_entry(res: Dict[str, Any]) -> bool:
     keywords = res.get("keywords") or {}
     if keywords.get("vulnerability"):

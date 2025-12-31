@@ -47,6 +47,7 @@ def build_network_policy(network_conf: dict[str, Any]) -> NetworkPolicy:
         scan_timeout=to_int(network_conf.get("scan_timeout", 60), default=60) or 60,
         sanitize_downloads=to_bool(network_conf.get("sanitize_downloads", False), default=False),
         sandbox_dir=network_conf.get("sandbox_dir"),
+        offline=to_bool(network_conf.get("offline", False), default=False),
         # Optionnel : chemin metrics pour les fetch individuels
         # (transporte l'info via NetworkPolicy pour l'injecter côté HttpClient)
         **({"metrics_path": network_conf.get("metrics_path")} if network_conf.get("metrics_path") else {}),
@@ -56,6 +57,8 @@ def build_network_policy(network_conf: dict[str, Any]) -> NetworkPolicy:
 def build_crawler_settings(crawler_conf: dict[str, Any], fallback_allow_domains: Optional[Set[str]] = None) -> dict[str, Any]:
     max_depth = to_int(crawler_conf.get("max_depth", 2), default=2) or 2
     max_pages = to_int(crawler_conf.get("max_pages"))
+    global_max_pages = to_int(crawler_conf.get("max_total_pages")) or to_int(crawler_conf.get("global_max_pages"))
+    global_max_bytes = to_int(crawler_conf.get("max_total_bytes")) or to_int(crawler_conf.get("global_max_bytes"))
 
     allow_domains: Set[str] = set(crawler_conf.get("allow_domains", []) or [])
     if not allow_domains and fallback_allow_domains:
@@ -71,6 +74,8 @@ def build_crawler_settings(crawler_conf: dict[str, Any], fallback_allow_domains:
         "max_concurrent": to_int(crawler_conf.get("max_concurrent", 1), default=1) or 1,
         "url_normalizer": crawler_conf.get("url_normalizer", "strip"),
         "user_agent": crawler_conf.get("user_agent"),
+        "global_max_pages": global_max_pages,
+        "global_max_bytes": global_max_bytes,
     }
 
 

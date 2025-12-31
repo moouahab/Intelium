@@ -139,6 +139,7 @@ def download_with_context(
         return _too_large_error(ctx.policy.max_bytes or 0)
 
     content_bytes, truncated = _stream_content(resp, ctx.policy.max_bytes)
+    size_bytes = len(content_bytes) if content_bytes else None
     if truncated:
         return _too_large_error(ctx.policy.max_bytes or 0)
     if content_bytes is None:
@@ -157,6 +158,7 @@ def download_with_context(
             content_type=ctype or "text/html",
             saved_path=saved,
             status_code=resp.status_code,
+            size_bytes=size_bytes,
         )
 
     if stype == "api":
@@ -171,6 +173,7 @@ def download_with_context(
             content_type=ctype or "application/json",
             saved_path=saved,
             status_code=resp.status_code,
+            size_bytes=size_bytes,
         )
 
     if stype == "xml":
@@ -185,6 +188,7 @@ def download_with_context(
             content_type=ctype or "application/xml",
             saved_path=saved,
             status_code=resp.status_code,
+            size_bytes=size_bytes,
         )
 
     if stype == "pdf":
@@ -197,6 +201,7 @@ def download_with_context(
             content_type=ctype or "application/pdf",
             saved_path=saved,
             status_code=resp.status_code,
+            size_bytes=size_bytes,
         )
 
     if stype == "csv":
@@ -209,6 +214,7 @@ def download_with_context(
             content_type=ctype or "text/csv",
             saved_path=saved,
             status_code=resp.status_code,
+            size_bytes=size_bytes,
         )
 
     if stype == "txt":
@@ -221,6 +227,7 @@ def download_with_context(
             content_type=ctype or "text/plain",
             saved_path=saved,
             status_code=resp.status_code,
+            size_bytes=size_bytes,
         )
 
     if stype == "image":
@@ -235,6 +242,7 @@ def download_with_context(
             content_type=ctype or "application/octet-stream",
             saved_path=saved,
             status_code=resp.status_code,
+            size_bytes=size_bytes,
         )
 
     return DownloadResult(status="error", content=None, error="Type non supporté")

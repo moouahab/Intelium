@@ -44,6 +44,49 @@ def test_scraper_uses_cache(dummy_config_model, fake_client_factory, tmp_path):
     assert cache.get(root_url).status == "skipped-cache"
 
 
+def test_scraper_cache_hit_parses_saved_content(dummy_config_model, fake_client_factory, tmp_path):
+    scraper_module = importlib.import_module("cti_core.scraper")
+    source_module = importlib.import_module("cti_core.Source")
+
+    root_url = "http://example.com"
+    fake_client = fake_client_factory({root_url: "should-not-fetch"})
+    root_source = source_module.Source({"url": root_url, "type": "html", "name": "root"})
+    config_model = dummy_config_model([root_source])
+    cache_file = tmp_path / "cache.json"
+    cache = CacheManager(cache_file, auto_save=False)
+
+    saved_path = tmp_path / "cached.html"
+    saved_path.write_text("<html><a href='#'>cached content</a></html>")
+    cache.update(CacheEntry(url=root_url, type="html", hash="hash", status="downloaded", date="now", saved_path=str(saved_path)))
+
+    scraper = scraper_module.Scraper(config_model, cache, http_client=fake_client)
+    results = scraper.run()
+
+    assert len(fake_client.calls) == 0  # cache used
+    by_url = {r["url"]: r for r in results}
+    assert "cached content" in " ".join(by_url[root_url].get("extracted", []))
+
+
+def test_scraper_offline_without_cache_marks_offline(dummy_config_model, fake_client_factory, tmp_path):
+    scraper_module = importlib.import_module("cti_core.scraper")
+    source_module = importlib.import_module("cti_core.Source")
+
+    root_url = "http://example.com"
+    root_source = source_module.Source({"url": root_url, "type": "html", "name": "root"})
+    config_model = dummy_config_model([root_source])
+    # Active le mode offline
+    config_model.network_policy.offline = True
+    cache = CacheManager(tmp_path / "cache.json", auto_save=False)
+    fake_client = fake_client_factory({root_url: "should-not-fetch"})
+
+    scraper = scraper_module.Scraper(config_model, cache, http_client=fake_client)
+    results = scraper.run()
+
+    assert len(fake_client.calls) == 0
+    by_url = {r["url"]: r for r in results}
+    assert by_url[root_url]["status"] == "offline"
+
+
 def test_scraper_concurrent_workers(dummy_config_model, fake_client_factory, tmp_path):
     scraper_module = importlib.import_module("cti_core.scraper")
     source_module = importlib.import_module("cti_core.Source")
@@ -130,3 +173,23 @@ def test_scraper_records_keyword_hits(dummy_config_model, fake_client_factory, t
     assert "next" in by_url[root_url]["keywords"]["indicator"]
     assert "misc" in by_url[child_url].get("keywords", {})
     assert "done" in by_url[child_url]["keywords"]["misc"]
+
+
+def test_scraper_respects_global_page_quota(dummy_config_model, fake_client_factory, tmp_path):
+    scraper_module = importlib.import_module("cti_core.scraper")
+    source_module = importlib.import_module("cti_core.Source")
+
+    s1 = source_module.Source({"url": "http://a.com", "type": "html", "name": "a"})
+    s2 = source_module.Source({"url": "http://b.com", "type": "html", "name": "b"})
+    fake_client = fake_client_factory({"http://a.com": "A", "http://b.com": "B"})
+    cache = CacheManager(tmp_path / "cache.json", auto_save=False)
+    config_model = dummy_config_model([s1, s2], global_max_pages=1)
+
+    scraper = scraper_module.Scraper(config_model, cache, http_client=fake_client)
+    results = scraper.run()
+
+    # Une seule page consommée, la seconde source est marquée quota
+    assert "http://a.com" in [r["url"] for r in results]
+    quota_records = [r for r in results if r["url"] == "http://b.com"]
+    assert quota_records and quota_records[0]["status"] == "skipped-quota"
+    assert fake_client.calls == ["http://a.com"]

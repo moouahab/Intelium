@@ -24,6 +24,7 @@
 ## Réseau / garde-fous (`config/network.yaml`)
 - `enforce_https` : bloque le HTTP.
 - `block_private` : bloque IP privées (y compris via résolution DNS).
+- `offline` : mode cache-only (aucun fetch réseau ; si pas de cache, statut `offline`).
 - `allow_domains` : liste blanche. Ajoutez ici tout nouveau domaine cible.
 - `max_bytes` : coupe les téléchargements trop volumineux.
 - `scanner` / `scan_command` : YARA/AV optionnel.
@@ -32,7 +33,8 @@
 - **Sécurité** : gardez `enforce_https` et `block_private` à true, ne desserrez l'allowlist que pour des cibles autorisées. Ne stockez pas de secrets dans ce fichier.
 
 ## Crawler (`config/crawler.yaml`)
-- `max_depth` / `max_pages` : bornes du crawl.
+- `max_depth` / `max_pages` : bornes du crawl par source.
+- `global_max_pages` / `global_max_bytes` (alias `max_total_pages` / `max_total_bytes`) : quota global sur un run (toutes sources confondues). Si atteint, les sources restantes sont marquées `skipped-quota`.
 - `same_domain_only` : reste sur le domaine (recommandé).
 - `allow_domains` : override de l’allowlist réseau.
 - `respect_robots` + `crawl_delay_seconds` : respect des robots.txt et délais.
@@ -45,6 +47,7 @@
 - `extract_iocs`: active l’extraction CVE/URL/IP dans les extraits.
 - `per_source` : permet d’overrider les règles pour une source donnée.
 - Parsers extensibles : via `ParserRegistry` si besoin d’ajouter un type.
+- `certkev: true` (par type ou par source) active l’extraction contextuelle pour les bulletins CERT/KEV (repère les CVE/CERTFR dans le texte et garde un extrait court). Auto-activé pour les sources dont le nom contient `cert`, `kev` ou `cisa`.
 
 ## Sortie / Rapport (`config/output.yaml`)
 - `format` : `markdown` ou `json`, `file` : chemin principal, `split_per_source` + `detail_dir`.
@@ -71,7 +74,7 @@
 - Les overrides sont normalisés et transmis au client HTTP et au policy réseau.
 - **Sécurité** : ne relâchez pas les garde-fous (max_bytes, robots) sans besoin clair et accord explicite. Gardez `headless` désactivé par défaut.
 
-## Métriques et santé
+## Métriques, stockage et santé
 - `data/health.json` : enrichi par l’orchestrateur (runs) et par les fetch individuels (si `metrics_path` configuré). Contient compteurs succès/échec et somme des durées de fetch.
 - `scripts/orchestrator.py` : lance le scraper périodiquement avec enregistrement des métriques.
 - `scripts/health_summary.py` : résume `health.json` ou exporte en Prometheus (option `--prometheus`).
@@ -79,7 +82,7 @@
 - **Sécurité/ops** : surveillez les logs et `health.json` pour détecter des échecs ou des domaines inattendus.
 - Vault : un service Vault (dev) est présent dans docker-compose pour stocker des secrets ; aucune valeur n'est hardcodée, à configurer via variables d'environnement.
 - Secrets : `MONGO_URI` (et autres) peuvent être injectés via env ou Vault (`VAULT_ADDR`, `VAULT_TOKEN`, `VAULT_SECRET_PATH`; clé lue dans un secret KV v2).
-- Mongo : service optionnel (compose) pour persister le cache/résultats. Activez `backend: mongo` dans `config/cache.yaml` et fournissez `MONGO_URI` (env ou Vault).
+- Mongo : service optionnel (compose) pour persister le cache **et** tous les résultats (y compris ceux issus du cache). Activez `backend: mongo` dans `config/cache.yaml` et fournissez `MONGO_URI` (env ou Vault). Les documents contiennent statut, extraits, mots-clés, saved_path.
 
 ## Getting started
 1. Installer les dépendances : `make deps`

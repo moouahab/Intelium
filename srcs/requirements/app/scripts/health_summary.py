@@ -26,6 +26,9 @@ def summary(payload: dict) -> dict:
     total = fetch.get("total", 0)
     success = fetch.get("success", 0)
     failure = fetch.get("failure", 0)
+    reasons = fetch.get("reasons", {}) or {}
+    per_status = fetch.get("per_status", {}) or {}
+    bytes_total = int(fetch.get("bytes_total", 0))
     duration_sum = float(fetch.get("duration_sum", 0.0))
     avg_duration = (duration_sum / total) if total else 0.0
     last_run = payload.get("last_run") or {}
@@ -35,6 +38,9 @@ def summary(payload: dict) -> dict:
         "fetch_success": success,
         "fetch_failure": failure,
         "fetch_avg_duration": avg_duration,
+        "fetch_reasons": reasons,
+        "fetch_per_status": per_status,
+        "fetch_bytes_total": bytes_total,
         "runs_total": counters.get("total", 0),
         "runs_success": counters.get("success", 0),
         "runs_failure": counters.get("failure", 0),
@@ -59,10 +65,15 @@ def print_prometheus(s: dict):
         f"cti_fetch_success {s['fetch_success']}",
         f"cti_fetch_failure {s['fetch_failure']}",
         f"cti_fetch_avg_duration_seconds {s['fetch_avg_duration']:.4f}",
+        f"cti_fetch_bytes_total {s['fetch_bytes_total']}",
         f"cti_runs_total {s['runs_total']}",
         f"cti_runs_success {s['runs_success']}",
         f"cti_runs_failure {s['runs_failure']}",
     ]
+    for reason, count in (s.get("fetch_reasons", {}) or {}).items():
+        lines.append(f'cti_fetch_reason_total{{reason="{reason}"}} {count}')
+    for status, count in (s.get("fetch_per_status", {}) or {}).items():
+        lines.append(f'cti_fetch_status_total{{status="{status}"}} {count}')
     print("\n".join(lines))
 
 

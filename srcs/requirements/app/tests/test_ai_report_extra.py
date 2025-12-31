@@ -21,7 +21,7 @@ def test_generate_ai_report_sets_pass_prompt_as_arg_for_codex(monkeypatch, tmp_p
         captured["cmd"] = cmd
         captured["pass_prompt_as_arg"] = pass_prompt_as_arg
         captured["prompt_via_file"] = prompt_via_file
-        return "OK"
+        return "OK FIN DU RAPPORT"
 
     monkeypatch.setattr(ai_report, "_run_llm", fake_run)
     out = tmp_path / "ai.md"
@@ -32,6 +32,6 @@ def test_generate_ai_report_sets_pass_prompt_as_arg_for_codex(monkeypatch, tmp_p
     )
 
     assert res == out
-    assert out.read_text() == "OK"
+    assert out.read_text() == "OK FIN DU RAPPORT"
     assert captured["pass_prompt_as_arg"] is False
     assert captured["prompt_via_file"] is True

@@ -76,10 +76,6 @@ services:
       - ./requirements/app/docs:/app/docs
     environment:
       PYTHONPATH: /app
-      GROQ_API_KEY: ${GROQ_API_KEY:-}
-      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
-      GROQ_MAX_TOKENS: ${GROQ_MAX_TOKENS:-1024}
-      GROQ_TEMPERATURE: ${GROQ_TEMPERATURE:-0.2}
     depends_on:
       - cti-scraper
 
@@ -89,6 +85,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus_rules.yml:/etc/prometheus/alert_rules.yml:ro
       - prometheus_data:/prometheus
     ports:
       - "9090:9090"
@@ -105,10 +102,23 @@ services:
       - GF_SERVER_ROOT_URL=http://localhost:3000
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
     ports:
       - "3000:3000"
     depends_on:
       - prometheus
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: cti-alertmanager
+    restart: unless-stopped
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    env_file:
+      - ../.env
+    ports:
+      - "9093:9093"
 
 volumes:
   pgdata:

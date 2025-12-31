@@ -13,10 +13,14 @@ from tools.keywords import find_keyword_hits
 from tools.http.client import HttpClient
 from tools.http.url_policy import UrlPolicy
 from tools.parsers.text_utils import ensure_text
+from tools.interfaces import GenericFetcher
+from tools.quota import Quota
+from tools.download_types import DownloadResult
+from pathlib import Path
 
 
 class Scraper:
-    def __init__(self, config_model, cache_manager: CacheManager, http_client: HttpClient | None = None):
+    def __init__(self, config_model, cache_manager: CacheManager, http_client: GenericFetcher | None = None):
         self.config_model = config_model
         self.cache = cache_manager
         self.results = []
@@ -27,6 +31,10 @@ class Scraper:
         self.same_domain_only = bool(crawler_conf.get("same_domain_only", True))
         self.allow_domains: Set[str] = set(crawler_conf.get("allow_domains", []) or [])
         self.max_concurrent = int(crawler_conf.get("max_concurrent", 1) or 1)
+        self.global_quota = Quota(
+            max_pages=crawler_conf.get("global_max_pages"),
+            max_bytes=crawler_conf.get("global_max_bytes"),
+        )
         http_settings = getattr(config_model, "http_settings", {}) or {}
         self.url_policy = UrlPolicy(
             same_domain_only=self.same_domain_only,
@@ -69,8 +77,8 @@ class Scraper:
         if result.status == "downloaded":
             current.update_hash()
 
-        extracted = []
-        keyword_hits = {}
+        extracted: list[str] = []
+        keyword_hits: dict = {}
         if result.status == "downloaded":
             extracted = parser.parse_content(
                 current.type,
@@ -86,12 +94,50 @@ class Scraper:
             keyword_hits = find_keyword_hits(texts_for_match, getattr(self.config_model, "keywords", {}))
         return result, extracted, keyword_hits
 
+    def _parse_cached(self, current: Source, cached_entry):
+        # Si on a déjà des extraits en cache (Mongo), on les réutilise en priorité
+        if getattr(cached_entry, "extracted", None):
+            return cached_entry.extracted, getattr(cached_entry, "keywords", {}) or {}
+        if not cached_entry.saved_path:
+            return [], {}
+        path = Path(cached_entry.saved_path)
+        if not path.exists():
+            return [], {}
+        try:
+            raw_bytes = path.read_bytes()
+        except Exception:
+            return [], {}
+        raw_content = raw_bytes
+        if current.type in {"html", "api", "xml", "csv", "txt"}:
+            raw_content = ensure_text(raw_bytes)
+        extracted = parser.parse_content(
+            current.type,
+            raw_content,
+            self.config_model.scraping_settings,
+            source_name=current.name,
+        )
+        texts_for_match = list(extracted)
+        try:
+            texts_for_match.append(ensure_text(raw_content))
+        except Exception:
+            pass
+        keyword_hits = find_keyword_hits(texts_for_match, getattr(self.config_model, "keywords", {}))
+        return extracted, keyword_hits
+
     def _process_source(self, state: CrawlerState, current: Source, depth: int) -> None:
         if state.already_visited(current.url):
             return
         state.mark_visited(current.url)
 
-        if self.recorder.check_or_record_cache_hit(current.url, current.type, current.name or current.url):
+        cached = self.cache.get(current.url)
+        if cached and cached.status == "downloaded":
+            extracted, keyword_hits = self._parse_cached(current, cached)
+            self.recorder.record_cache_hit(current, cached, extracted, keyword_hits)
+            return
+        if getattr(self.policy, "offline", False):
+            from tools.download_types import DownloadResult
+            offline_result = DownloadResult(status="offline", content=None, error="Mode offline actif (cache manquant)")
+            self.recorder.record_result(current, offline_result, [], {})
             return
 
         fetched = self._fetch_and_parse(current)
@@ -106,6 +152,9 @@ class Scraper:
             return
 
         self.recorder.record_result(current, result, extracted, keyword_hits)
+        # Quota global de volume (optionnel)
+        if self.global_quota:
+            self.global_quota.add_bytes(getattr(result, "size_bytes", None))
         enqueue_links(
             current,
             depth,
@@ -120,12 +169,23 @@ class Scraper:
             if not item:
                 break
             current, depth = item
+            if self.global_quota and not self.global_quota.reserve_page():
+                # Limite globale atteinte, on marque la source et on arrête
+                quota_result = DownloadResult(status="skipped-quota", content=None, error="Quota global atteint")
+                self.recorder.record_result(current, quota_result, [], {})
+                break
             self._process_source(state, current, depth)
 
     def _process_single(self, source: Source):
         thread_safe = self.max_concurrent > 1
         state = CrawlerState(self.max_depth, self.max_pages, self._normalize_url, thread_safe=thread_safe)
         state.add(source, 0)
+
+        # Si le quota global de pages est déjà épuisé, on ne traite pas la source
+        if self.global_quota and self.global_quota.max_pages is not None and self.global_quota.remaining_pages() == 0:
+            quota_result = DownloadResult(status="skipped-quota", content=None, error="Quota global atteint")
+            self.recorder.record_result(source, quota_result, [], {})
+            return
 
         if self.max_concurrent <= 1:
             self._worker_loop(state)

@@ -28,17 +28,21 @@ class MetricsHandler(BaseHTTPRequestHandler):
         payload = load_health(Path(self.server.metrics_file))  # type: ignore
         s = summary(payload)
         if prometheus:
-            body = "\n".join(
-                [
-                    f"cti_fetch_total {s['fetch_total']}",
-                    f"cti_fetch_success {s['fetch_success']}",
-                    f"cti_fetch_failure {s['fetch_failure']}",
-                    f"cti_fetch_avg_duration_seconds {s['fetch_avg_duration']:.4f}",
-                    f"cti_runs_total {s['runs_total']}",
-                    f"cti_runs_success {s['runs_success']}",
-                    f"cti_runs_failure {s['runs_failure']}",
-                ]
-            )
+            lines = [
+                f"cti_fetch_total {s['fetch_total']}",
+                f"cti_fetch_success {s['fetch_success']}",
+                f"cti_fetch_failure {s['fetch_failure']}",
+                f"cti_fetch_avg_duration_seconds {s['fetch_avg_duration']:.4f}",
+                f"cti_fetch_bytes_total {s['fetch_bytes_total']}",
+                f"cti_runs_total {s['runs_total']}",
+                f"cti_runs_success {s['runs_success']}",
+                f"cti_runs_failure {s['runs_failure']}",
+            ]
+            for reason, count in (s.get("fetch_reasons", {}) or {}).items():
+                lines.append(f'cti_fetch_reason_total{{reason="{reason}"}} {count}')
+            for status, count in (s.get("fetch_per_status", {}) or {}).items():
+                lines.append(f'cti_fetch_status_total{{status="{status}"}} {count}')
+            body = "\n".join(lines)
             content_type = "text/plain; version=0.0.4"
         else:
             body = json.dumps(s, indent=2)

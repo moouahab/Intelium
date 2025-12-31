@@ -4,5 +4,6 @@ cache:
   per_site: true
   track_fields: ["url", "type","hash", "date"]
   backend: mongo         # mongo|file (si MONGO_URI défini, mongo sera choisi)
+  mongo_uri: "mongodb://127.0.0.1:27017/cti"
   mongo_db: cti
   mongo_collection: cache

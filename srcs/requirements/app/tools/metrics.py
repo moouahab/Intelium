@@ -49,20 +49,37 @@ def record_run(metrics_path: str | Path, metrics: RunMetrics) -> None:
     metrics_path.write_text(json.dumps(payload, indent=2))
 
 
-def record_fetch(metrics_path: str | Path, duration_seconds: float, status: str) -> None:
+def record_fetch(
+    metrics_path: str | Path,
+    duration_seconds: float,
+    status: str,
+    reason: Optional[str] = None,
+    size_bytes: Optional[int] = None,
+) -> None:
     """
     Enregistre un fetch individuel (succès/erreur) avec comptage et durée cumulée.
     """
     metrics_path = Path(metrics_path)
     metrics_path.parent.mkdir(parents=True, exist_ok=True)
     payload = _load_health(metrics_path)
-    fetch = payload.setdefault("fetch", {"total": 0, "success": 0, "failure": 0, "duration_sum": 0.0})
+    fetch = payload.setdefault(
+        "fetch",
+        {"total": 0, "success": 0, "failure": 0, "duration_sum": 0.0, "reasons": {}, "per_status": {}, "bytes_total": 0},
+    )
+    reasons = fetch.setdefault("reasons", {})
+    per_status = fetch.setdefault("per_status", {})
+    fetch["bytes_total"] += int(size_bytes or 0)
     fetch["total"] += 1
     fetch["duration_sum"] += float(duration_seconds)
     if status == "downloaded":
         fetch["success"] += 1
     else:
         fetch["failure"] += 1
+    if reason:
+        reasons[reason] = reasons.get(reason, 0) + 1
+    per_status[status] = per_status.get(status, 0) + 1
+    fetch["reasons"] = reasons
+    fetch["per_status"] = per_status
     payload["fetch"] = fetch
     metrics_path.write_text(json.dumps(payload, indent=2))
 

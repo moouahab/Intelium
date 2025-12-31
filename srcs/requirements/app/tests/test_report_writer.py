@@ -81,14 +81,14 @@ def test_ai_report_writes_file(tmp_path, monkeypatch):
     def fake_run(command, prompt, timeout=120, **kwargs):
         called["cmd"] = command
         called["prompt"] = prompt
-        return "AI REPORT"
+        return "AI REPORT FIN DU RAPPORT"
 
     monkeypatch.setattr("tools.ai_report._run_llm", fake_run)
     out = tmp_path / "ai.md"
     tmpl = "PROMPT:\n{results_json}"
     res = generate_ai_report([{"url": "http://x"}], {"enabled": True, "command": "echo ai", "output": out, "prompt_template": tmpl})
     assert res == out
-    assert out.read_text() == "AI REPORT"
+    assert out.read_text() == "AI REPORT FIN DU RAPPORT"
     assert "PROMPT:" in called["prompt"]
 
 
@@ -104,7 +104,7 @@ def test_ai_report_autodetect_returns_none_if_not_found(tmp_path, monkeypatch):
 
 
 def test_ai_report_prompt_path(tmp_path, monkeypatch):
-    monkeypatch.setattr("tools.ai_report._run_llm", lambda command, prompt, timeout=120, **kwargs: "OK")
+    monkeypatch.setattr("tools.ai_report._run_llm", lambda command, prompt, timeout=120, **kwargs: "OK FIN DU RAPPORT")
     prompt_file = tmp_path / "prompt.txt"
     prompt_file.write_text("PROMPT FILE {results_json}")
     out = tmp_path / "ai.md"
@@ -120,7 +120,7 @@ def test_ai_report_autodetect_codex(tmp_path, monkeypatch):
     def fake_which(cmd):
         return "/usr/bin/codex" if cmd == "codex" else None
     monkeypatch.setattr("tools.ai.command_plan.shutil.which", fake_which)
-    monkeypatch.setattr("tools.ai_report._run_llm", lambda command, prompt, timeout=120, **kwargs: "OK")
+    monkeypatch.setattr("tools.ai_report._run_llm", lambda command, prompt, timeout=120, **kwargs: "OK FIN DU RAPPORT")
     out = tmp_path / "ai.md"
     res = generate_ai_report([{"url": "http://x"}], {"enabled": True, "command": "", "output": out})
     assert res == out

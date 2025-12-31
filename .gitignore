@@ -209,7 +209,7 @@ srcs/requirements/app/.env
 srcs/requirements/app/.cache/
 srcs/requirements/app/.ruff_cache/
 srcs/requirements/app/.pytest_cache/
-srcs/requirements/mangodb/data/
+srcs/requirements/mangodb/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore

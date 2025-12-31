@@ -1,0 +1,42 @@
+groups:
+  - name: cti-alerts
+    rules:
+      - alert: CTIHighFetchFailureRate
+        expr: |
+          increase(cti_fetch_failure[10m]) / increase(cti_fetch_total[10m]) > 0.4
+          and increase(cti_fetch_total[10m]) > 10
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Taux d'échec fetch élevé"
+          description: "Plus de 40% des téléchargements ont échoué sur les 10 dernières minutes."
+
+      - alert: CTIHighRunFailureRate
+        expr: |
+          increase(cti_runs_failure[1h]) / increase(cti_runs_total[1h]) > 0.2
+          and increase(cti_runs_total[1h]) > 3
+        for: 20m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Taux d'échec des runs élevé"
+          description: "Plus de 20% des orchestrations sont en échec sur la dernière heure."
+
+      - alert: CTIMetricsMissing
+        expr: up{job="cti-metrics"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Endpoint métriques indisponible"
+          description: "Le service cti-metrics ne répond pas depuis plus de 5 minutes."
+
+      - alert: CTIQuotaTriggered
+        expr: increase(cti_fetch_status_total{status="skipped-quota"}[30m]) > 0
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "Quota global atteint"
+          description: "Des ressources sont ignorées car le quota global (pages/bytes) est atteint."

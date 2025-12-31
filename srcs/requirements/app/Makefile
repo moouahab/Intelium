@@ -42,7 +42,7 @@ clean:
 fclean: clean
 	# Artefacts de scrape et rapports
 	rm -rf docs/html docs/xml docs/pdf docs/csv docs/image docs/txt
-	rm -rf reports/sources reports/*.md
+	rm -rf reports/sources reports/*.md reports_user reports
 	rm -rf logs
 	# Archives/dist
 	rm -rf dist build

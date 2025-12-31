@@ -45,6 +45,7 @@ clean:
 	$(MAKE_APP) clean
 
 fclean: clean
+	$(MAKE_APP) fclean
 	$(COMPOSE) down -v
 
 re: clean deps test

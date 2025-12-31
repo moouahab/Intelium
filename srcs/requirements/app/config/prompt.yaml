@@ -13,6 +13,11 @@ prompt:
     - Reco CTI/sécu : actions prioritaires (patch, blocage IOC, surveillance), sources à relancer si bloquées/tronquées.
 
     Contraintes :
+    - Limite ta réponse à ~2200 caractères ; priorise Résumé → IOCs → Vulnérabilités → Recos ; coupe proprement les sections moins critiques si besoin.
+    - Mise en forme soignée en Markdown : titres clairs, puces, mots-clés en gras, tableaux pour IOCs et vulnérabilités (colonnes : Élément/Type/Produits/Risque) et un tableau des sources (Type/Statut/Erreurs/Cache/Fichiers/Extraits).
+    - N’omet aucun CVE/URL/erreur mentionné(e) dans les extraits ; si une info est absente, indique-le explicitement.
+    - Si une source est marquée skipped (cache), considère ses extraits comme disponibles, indique qu'ils proviennent du cache et utilise-les.
+    - Pas de texte coupé ni « incomplète… », termine par la ligne : FIN DU RAPPORT
     - Ne pas inventer : si une info n’apparaît pas dans les extraits, indique qu’elle est absente.
     - Signale les sources bloquées/erreurs (robots, MIME, max_bytes) qui limitent l’analyse.
     - Style : listes courtes, concret, sans blabla marketing.

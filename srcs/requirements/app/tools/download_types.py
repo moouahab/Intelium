@@ -7,6 +7,7 @@ from typing import Optional, Any, Set
 class NetworkPolicy:
     enforce_https: bool = True
     block_private: bool = True
+    offline: bool = False  # mode cache-only
     allow_domains: Optional[Set[str]] = None
     max_bytes: Optional[int] = None
     timeout: int = 10
@@ -28,7 +29,6 @@ class StorageTarget:
     base_dir: Path
     theme: str
     name: str
-
     def path_for(self, extension: str) -> Path:
         return self.base_dir / self.theme / f"{self.name}{extension}"
 
@@ -43,3 +43,4 @@ class DownloadResult:
     hash: Optional[str] = None
     date: Optional[str] = None
     status_code: Optional[int] = None
+    size_bytes: Optional[int] = None

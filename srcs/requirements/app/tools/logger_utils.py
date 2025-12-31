@@ -23,11 +23,15 @@ def setup_logger(logging_conf: dict):
 
     file_path = logging_conf.get("file")
     if file_path:
-        Path(file_path).parent.mkdir(parents=True, exist_ok=True)
-        fh = RotatingFileHandler(file_path, maxBytes=1_000_000, backupCount=3)
-        fh.setLevel(level)
-        fh.setFormatter(formatter)
-        logger.addHandler(fh)
+        try:
+            Path(file_path).parent.mkdir(parents=True, exist_ok=True)
+            fh = RotatingFileHandler(file_path, maxBytes=1_000_000, backupCount=3)
+            fh.setLevel(level)
+            fh.setFormatter(formatter)
+            logger.addHandler(fh)
+        except Exception as exc:
+            # Pas de crash si pas de droits disque : fallback console uniquement
+            logger.warning("File logger disabled (%s)", exc)
     return logger
 
 

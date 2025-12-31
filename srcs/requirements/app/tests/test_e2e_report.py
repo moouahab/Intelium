@@ -63,7 +63,7 @@ def test_runner_ai_report_with_prompt_path(tmp_path, monkeypatch, dummy_config_m
     results = scraper.run()
 
     # Mock LLM call
-    monkeypatch.setattr("tools.ai_report._run_llm", lambda cmd, prompt, timeout=120, **kwargs: "AI OK")
+    monkeypatch.setattr("tools.ai_report._run_llm", lambda cmd, prompt, timeout=120, **kwargs: "AI OK FIN DU RAPPORT")
 
     output_conf = {
         "format": "markdown",
@@ -122,7 +122,7 @@ def test_e2e_multi_sources_overrides_and_reports(tmp_path, dummy_config_model, m
         "ai_report": {"enabled": True, "command": "echo ai", "output": tmp_path / "ai.md"},
     }
     # mock IA
-    monkeypatch.setattr("tools.ai_report._run_llm", lambda cmd, prompt, timeout=120, **kwargs: "AI OK")
+    monkeypatch.setattr("tools.ai_report._run_llm", lambda cmd, prompt, timeout=120, **kwargs: "AI OK FIN DU RAPPORT")
     report_path = report_module.write_report(results, output_conf)
     ai_path = runner_module.generate_ai_report(results, output_conf.get("ai_report", {}))
 
