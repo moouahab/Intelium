@@ -265,6 +265,10 @@ requirements/app/docs/pdf/
 requirements/app/docs/csv/
 requirements/app/docs/image/
 requirements/app/docs/txt/
+# (nouvelle arbo sous srcs/requirements/app)
+srcs/requirements/app/data/health.json
+srcs/requirements/app/data/logs/
+srcs/requirements/app/data/sandbox/
 # anciennes racines (si existantes encore)
 data/cache.json
 data/cache_sites/
