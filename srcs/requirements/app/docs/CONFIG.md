@@ -20,6 +20,7 @@
 - `config/scraping.yaml` : règles d’extraction par type, sanitation, IOC.
 - `config/output.yaml` : rapport (format, split, AI report + scoring).
 - `config/auth.yaml` : entêtes globaux et par domaine (supports `${ENV_VAR}`).
+- `config/ops.yaml` : pré‑checks d’environnement (strict_env, vars requises).
 
 ## Réseau / garde-fous (`config/network.yaml`)
 - `enforce_https` : bloque le HTTP.
@@ -65,6 +66,12 @@
 - `authentication.hosts.<domaine>` : entêtes par domaine (token, API key). Utiliser `${ENV_VAR}` pour injecter les secrets.
 - **Sécurité** : ne commitez jamais de secrets ; utilisez des variables d’environnement ou un vault. Limitez les entêtes aux domaines explicitement autorisés.
 
+## Ops (`config/ops.yaml`)
+- `strict_env` : si true, bloque le run si des variables requises sont manquantes.
+- `require_auth_env` : vérifie que toutes les variables `${ENV_VAR}` dans `auth.yaml` sont présentes.
+- `require_alerting_env` : vérifie les variables Slack/SMTP pour Alertmanager.
+- `required_env` : liste supplémentaire à vérifier.
+
 ## Mode headless
 - Pour les pages JS/infinite scroll : activer `overrides.headless: true` sur une source. La stratégie headless est extensible ; Playwright est utilisée si présente, sinon Selenium si installé. Vous pouvez injecter une autre stratégie via le code (Selenium/Playwright custom) sans changer la config.
 - **Sécurité** : n’activez headless que sur des cibles autorisées ; conservez l’allowlist stricte.
@@ -79,6 +86,7 @@
 - `scripts/orchestrator.py` : lance le scraper périodiquement avec enregistrement des métriques.
 - `scripts/health_summary.py` : résume `health.json` ou exporte en Prometheus (option `--prometheus`).
 - `scripts/metrics_server.py` : expose `/metrics` (Prometheus) et `/health` (JSON) à partir de `health.json`.
+- `scripts/cache_admin.py` : stats/purge du cache (fichier, per-site, ou Mongo). Utilise `--file`, `--dir`, ou `--mongo-uri` (fallback env/Vault `MONGO_URI`).
 - **Sécurité/ops** : surveillez les logs et `health.json` pour détecter des échecs ou des domaines inattendus.
 - Vault : un service Vault (dev) est présent dans docker-compose pour stocker des secrets ; aucune valeur n'est hardcodée, à configurer via variables d'environnement.
 - Secrets : `MONGO_URI` (et autres) peuvent être injectés via env ou Vault (`VAULT_ADDR`, `VAULT_TOKEN`, `VAULT_SECRET_PATH`; clé lue dans un secret KV v2).

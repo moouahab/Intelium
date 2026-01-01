@@ -1,5 +1,6 @@
 from pathlib import Path
 from tools.cache import CacheManager, CacheEntry, CacheRegistry
+from tools.cache_store import build_cache_store, FileCacheStore, PerSiteCacheStore, MongoCacheStore
 
 
 def test_cache_manager_load_and_update(tmp_path):
@@ -78,3 +79,27 @@ def test_cache_registry_separate_files(tmp_path):
     reg2 = CacheRegistry(base_dir, auto_save=False)
     assert reg2.get("https://a.example.com/page").hash == "aaa"
     assert reg2.get("https://b.example.com/page").hash == "bbb"
+
+
+def test_build_cache_store_file_default(tmp_path, monkeypatch):
+    monkeypatch.delenv("MONGO_URI", raising=False)
+    monkeypatch.delenv("VAULT_ADDR", raising=False)
+    monkeypatch.delenv("VAULT_TOKEN", raising=False)
+    conf = {"file": str(tmp_path / "cache.json"), "auto_save": False, "per_site": False}
+    store = build_cache_store(conf)
+    assert isinstance(store, FileCacheStore)
+
+
+def test_build_cache_store_per_site(tmp_path, monkeypatch):
+    monkeypatch.delenv("MONGO_URI", raising=False)
+    monkeypatch.delenv("VAULT_ADDR", raising=False)
+    monkeypatch.delenv("VAULT_TOKEN", raising=False)
+    conf = {"dir": str(tmp_path / "sites"), "auto_save": False, "per_site": True}
+    store = build_cache_store(conf)
+    assert isinstance(store, PerSiteCacheStore)
+
+
+def test_build_cache_store_mongo_env(monkeypatch):
+    monkeypatch.setenv("MONGO_URI", "mongodb://example:27017/cti")
+    store = build_cache_store({})
+    assert isinstance(store, MongoCacheStore)

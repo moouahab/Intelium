@@ -8,8 +8,7 @@ Le cache ne fait pas de suppression ni d'auto-save (Mongo gère la persistance).
 """
 from __future__ import annotations
 
-import os
-from typing import Optional
+from typing import Optional, Dict, Any
 
 try:
     from pymongo import MongoClient  # type: ignore
@@ -90,3 +89,23 @@ class MongoCache:
         if cached.hash is None or current_hash is None:
             return True
         return cached.hash != current_hash
+
+    def stats(self) -> Dict[str, Any]:
+        coll = self._collection()
+        if coll is None:
+            return {"error": "mongo_unavailable", "db": self.db_name, "collection": self.collection_name}
+        try:
+            count = coll.count_documents({})
+        except Exception as exc:
+            return {"error": str(exc), "db": self.db_name, "collection": self.collection_name}
+        return {"entries": count, "db": self.db_name, "collection": self.collection_name}
+
+    def clear(self) -> Dict[str, Any]:
+        coll = self._collection()
+        if coll is None:
+            return {"error": "mongo_unavailable", "db": self.db_name, "collection": self.collection_name}
+        try:
+            res = coll.delete_many({})
+        except Exception as exc:
+            return {"error": str(exc), "db": self.db_name, "collection": self.collection_name}
+        return {"deleted": res.deleted_count, "db": self.db_name, "collection": self.collection_name}

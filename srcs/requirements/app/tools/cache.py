@@ -68,6 +68,11 @@ class CacheManager:
         self.cache_path.parent.mkdir(parents=True, exist_ok=True)
         self.cache_path.write_text(json.dumps(payload, indent=2))
 
+    def stats(self) -> Dict[str, Any]:
+        with self._lock:
+            count = len(self._entries)
+        return {"entries": count, "path": str(self.cache_path)}
+
     def get(self, url: str) -> Optional[CacheEntry]:
         with self._lock:
             return self._entries.get(url)
@@ -115,7 +120,7 @@ class CacheManager:
             return True
         return cached.hash != current_hash
 
-    def clear(self) -> None:
+    def clear(self) -> Dict[str, Any]:
         with self._lock:
             self._entries = {}
         if self.cache_path.exists():
@@ -123,6 +128,7 @@ class CacheManager:
                 self.cache_path.unlink()
             except OSError:
                 pass
+        return {"cleared": True, "path": str(self.cache_path)}
 
 
 class CacheRegistry:
@@ -177,3 +183,27 @@ class CacheRegistry:
 
     def has_changed(self, url: str, current_hash: Optional[str]) -> bool:
         return self._get_manager(url).has_changed(url, current_hash)
+
+    def stats(self) -> Dict[str, Any]:
+        if not self.base_dir.exists():
+            return {"entries": 0, "path": str(self.base_dir)}
+        total = 0
+        for path in self.base_dir.glob("*.json"):
+            try:
+                data = json.loads(path.read_text() or "{}")
+                if isinstance(data, dict):
+                    total += len(data)
+            except Exception:
+                continue
+        return {"entries": total, "path": str(self.base_dir)}
+
+    def clear(self) -> Dict[str, Any]:
+        if self.base_dir.exists():
+            for path in self.base_dir.glob("*.json"):
+                try:
+                    path.unlink()
+                except OSError:
+                    pass
+        with self._lock:
+            self._managers = {}
+        return {"cleared": True, "path": str(self.base_dir)}
