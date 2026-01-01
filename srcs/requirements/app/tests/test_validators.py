@@ -1,5 +1,5 @@
 from tools.config.validators import validate_output, validate_auth
-from tools.http.url_utils import resolve_normalizer
+from tools.providers.http.url_utils import resolve_normalizer
 from tools.config.validators import validate_crawler
 
 

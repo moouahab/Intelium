@@ -5,7 +5,7 @@ from tools.download_types import NetworkPolicy, DownloadResult
 
 
 def test_http_client_blocks_when_robots_forbid(monkeypatch):
-    client_module = importlib.import_module("tools.http.client")
+    client_module = importlib.import_module("tools.providers.http.client")
 
     # Force robots à refuser
     monkeypatch.setattr(client_module.RobotsDelayPolicy, "is_allowed", lambda self, url, respect_override=None: False)
@@ -25,7 +25,7 @@ def test_http_client_blocks_when_robots_forbid(monkeypatch):
 
 
 def test_http_client_applies_max_bytes_override(monkeypatch):
-    client_module = importlib.import_module("tools.http.client")
+    client_module = importlib.import_module("tools.providers.http.client")
 
     captured = {}
 
@@ -50,8 +50,8 @@ def test_http_client_applies_max_bytes_override(monkeypatch):
 
 
 def test_request_context_applies_user_agent_and_headers(monkeypatch):
-    client_module = importlib.import_module("tools.http.client")
-    req_ctx_module = importlib.import_module("tools.http.request_context")
+    client_module = importlib.import_module("tools.providers.http.client")
+    req_ctx_module = importlib.import_module("tools.providers.http.request_context")
 
     monkeypatch.setattr(client_module.RobotsDelayPolicy, "is_allowed", lambda self, url, respect_override=None: True)
     monkeypatch.setattr(client_module.RobotsDelayPolicy, "wait", lambda self, url, delay_override=None: None)
@@ -84,7 +84,7 @@ def test_request_context_applies_user_agent_and_headers(monkeypatch):
 
 
 def test_http_client_retries_on_http_error(monkeypatch):
-    client_module = importlib.import_module("tools.http.client")
+    client_module = importlib.import_module("tools.providers.http.client")
     calls = {"count": 0}
 
     def fake_download_with_context(source, ctx, storage=None):
@@ -113,7 +113,7 @@ def test_http_client_retries_on_http_error(monkeypatch):
 
 
 def test_http_client_backoff_adaptive(monkeypatch):
-    client_module = importlib.import_module("tools.http.client")
+    client_module = importlib.import_module("tools.providers.http.client")
     res_429 = DownloadResult(status="http-error", content=None, status_code=429)
     res_403 = DownloadResult(status="http-error", content=None, status_code=403)
     client = client_module.HttpClient(
@@ -129,7 +129,7 @@ def test_http_client_backoff_adaptive(monkeypatch):
 
 
 def test_http_client_headless_shortcuts_download(monkeypatch):
-    client_module = importlib.import_module("tools.http.client")
+    client_module = importlib.import_module("tools.providers.http.client")
     monkeypatch.setattr(client_module.RobotsDelayPolicy, "is_allowed", lambda self, url, respect_override=None: True)
     monkeypatch.setattr(client_module.RobotsDelayPolicy, "wait", lambda self, url, delay_override=None: None)
     called = {"headless": 0, "download": 0}
@@ -162,7 +162,7 @@ def test_http_client_headless_shortcuts_download(monkeypatch):
 
 
 def test_http_client_enforces_max_bytes_stream(monkeypatch):
-    client_module = importlib.import_module("tools.http.client")
+    client_module = importlib.import_module("tools.providers.http.client")
     download_module = importlib.import_module("tools.download")
 
     class FakeResponse:
@@ -204,7 +204,7 @@ def test_http_client_enforces_max_bytes_stream(monkeypatch):
 
 
 def test_http_client_uses_proxies_round_robin(monkeypatch):
-    client_module = importlib.import_module("tools.http.client")
+    client_module = importlib.import_module("tools.providers.http.client")
     captured = []
 
     def fake_download_with_context(source, ctx, storage=None):
@@ -231,7 +231,7 @@ def test_http_client_uses_proxies_round_robin(monkeypatch):
 
 
 def test_http_client_respect_robots_override(monkeypatch):
-    client_module = importlib.import_module("tools.http.client")
+    client_module = importlib.import_module("tools.providers.http.client")
     calls = {"allowed": []}
 
     def fake_is_allowed(self, url, respect_override=None):
@@ -260,8 +260,8 @@ def test_http_client_respect_robots_override(monkeypatch):
 
 
 def test_http_client_blocks_private_dns_resolution(monkeypatch):
-    client_module = importlib.import_module("tools.http.client")
-    network_module = importlib.import_module("tools.http.network")
+    client_module = importlib.import_module("tools.providers.http.client")
+    network_module = importlib.import_module("tools.providers.http.network")
 
     # Force la résolution à retourner une IP privée
     monkeypatch.setattr(network_module, "resolve_host_ips", lambda host: ["192.168.0.10"])
@@ -283,7 +283,7 @@ def test_http_client_blocks_private_dns_resolution(monkeypatch):
 
 
 def test_http_client_user_agent_and_proxy_increment_thread_safe():
-    client_module = importlib.import_module("tools.http.client")
+    client_module = importlib.import_module("tools.providers.http.client")
 
     client = client_module.HttpClient(
         policy=NetworkPolicy(enforce_https=False, block_private=False),

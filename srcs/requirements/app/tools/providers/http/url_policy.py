@@ -1,6 +1,6 @@
 from typing import Optional, Set
 
-from tools.http.url_utils import resolve_normalizer, same_domain
+from tools.providers.http.url_utils import resolve_normalizer, same_domain
 
 
 class UrlPolicy:

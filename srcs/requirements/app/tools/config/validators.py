@@ -1,6 +1,6 @@
 from typing import List
 from pathlib import Path
-from tools.http.url_utils import resolve_normalizer
+from tools.providers.http.url_utils import resolve_normalizer
 from tools.config.config_utils import to_bool
 
 

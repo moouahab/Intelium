@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from tools.http.client import HttpClient
+from tools.providers.http.client import HttpClient
 from tools.interfaces import GenericFetcher
 
 

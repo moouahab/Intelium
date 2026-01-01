@@ -7,10 +7,10 @@ from cti_core.sources_factory import enqueue_links
 from cti_core.result_recorder import ResultRecorder
 from tools.interfaces import CacheBackend
 from tools.download_types import NetworkPolicy
-from tools.http.url_utils import same_domain
+from tools.providers.http.url_utils import same_domain
 from tools.extractor import Extractor
 from tools.providers.fetchers import build_fetcher
-from tools.http.url_policy import UrlPolicy
+from tools.providers.http.url_policy import UrlPolicy
 from tools.parsers.text_utils import ensure_text
 from tools.interfaces import GenericFetcher
 from tools.quota import Quota

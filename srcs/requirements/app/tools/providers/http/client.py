@@ -5,11 +5,11 @@ from contextlib import contextmanager
 
 from tools.download import download_with_context
 from tools.download_types import DownloadResult, NetworkPolicy, StorageTarget
-from tools.http.network import validate_url
-from tools.http.policies import RobotsDelayPolicy
-from tools.http.request_context import build_request_context
+from tools.providers.http.network import validate_url
+from tools.providers.http.policies import RobotsDelayPolicy
+from tools.providers.http.request_context import build_request_context
 from tools.logger_utils import mask_sensitive_headers
-from tools.http.headless import fetch_headless, HeadlessStrategy, get_default_headless_strategy
+from tools.providers.http.headless import fetch_headless, HeadlessStrategy, get_default_headless_strategy
 from tools.observability.metrics import record_fetch
 from urllib.parse import urlparse, urlunparse
 
