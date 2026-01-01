@@ -2,7 +2,7 @@ import os
 
 import mongomock
 
-from tools import storage_mongo
+from tools.providers import storage_mongo
 
 
 def test_save_result_with_mongomock(monkeypatch):

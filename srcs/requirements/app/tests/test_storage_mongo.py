@@ -1,4 +1,4 @@
-from tools import storage_mongo
+from tools.providers import storage_mongo
 
 
 class DummyColl:
