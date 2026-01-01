@@ -71,7 +71,10 @@ def parse_pdf(content: bytes | str, conf: dict) -> List[str]:
     keep_images = conf.get("keep_images", False)
     max_pages = conf.get("max_pages")
     max_chars = conf.get("max_chars")
+    max_total_chars = conf.get("max_total_chars")
     results: List[str] = []
+    total_chars = 0
+    stop = False
     try:
         with pdfplumber.open(BytesIO(data)) as pdf:
             for idx, page in enumerate(pdf.pages):
@@ -87,12 +90,23 @@ def parse_pdf(content: bytes | str, conf: dict) -> List[str]:
                     if text:
                         if isinstance(max_chars, int) and max_chars > 0:
                             text = text[:max_chars]
+                        if isinstance(max_total_chars, int) and max_total_chars > 0:
+                            remaining = max_total_chars - total_chars
+                            if remaining <= 0:
+                                stop = True
+                                break
+                            if len(text) > remaining:
+                                text = text[:remaining]
+                                stop = True
                         results.append(text)
+                        total_chars += len(text)
                 if keep_images:
                     for img in getattr(page, "images", []) or []:
                         desc = _image_description(img, idx + 1)
                         if desc:
                             results.append(desc)
+                if stop:
+                    break
     except Exception as exc:
         _log_error(conf, "failed to parse PDF", exc)
         return []

@@ -70,3 +70,11 @@ def test_custom_parser_registry_injection():
     res = parser.parse_content("custom", "payload", conf, parser_registry=registry)
     assert res == ["ok-custom"]
     assert calls["content"] == "payload"
+
+
+def test_min_chars_filters_short_items():
+    scraping_conf = {"html": {"extract": [{"tag": "p"}], "min_chars": 4}}
+    html = "<p>ok</p><p>longer</p>"
+    results = parser.parse_content("html", html, scraping_conf)
+    assert "longer" in results
+    assert "ok" not in results

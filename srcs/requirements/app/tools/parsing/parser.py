@@ -89,6 +89,9 @@ def _filter_cert_like(results: List[str], source_name: str | None) -> List[str]:
 def _post_process(results: List[str], conf: Dict[str, Any], source_name: str | None = None) -> List[str]:
     results = _normalize_results(results)
     results = _filter_cert_like(results, source_name)
+    min_chars = conf.get("min_chars")
+    if isinstance(min_chars, int) and min_chars > 0:
+        results = [item for item in results if len(item) >= min_chars]
     if conf.get("deduplicate", True):
         seen = set()
         deduped = []

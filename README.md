@@ -71,8 +71,8 @@ python3 -m pytest -q                                # tests
 - XML : tags listés, sanitation optionnelle.
 - CSV : delimiter, header, colonnes.
 - TXT : texte brut + IOC.
-- PDF : pdfplumber, `max_pages`, `max_chars`, `keep_images`, `extract_text`.
-- Image : OCR Tesseract, `languages`, `max_chars`, `ocr: true/false`.
+- PDF : pdfplumber, `max_pages`, `max_chars`, `max_total_chars`, `keep_images`, `extract_text`, `min_chars`.
+- Image : OCR Tesseract, `languages`, `max_chars`, `min_chars`, `ocr: true/false`.
 - Extraction IOC (CVE/URL/IP) activable par type/sources.
 
 ## Observabilité et stockage

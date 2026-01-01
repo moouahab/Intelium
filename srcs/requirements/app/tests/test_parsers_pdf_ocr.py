@@ -1,8 +1,6 @@
 import types
 from io import BytesIO
-
 from PIL import Image, ImageDraw
-
 from tools.parsers import pdf_parser, ocr_parser
 
 
@@ -54,6 +52,37 @@ def test_parse_pdf_extracts_text_and_images(monkeypatch):
 def test_parse_pdf_gracefully_handles_missing_library(monkeypatch):
     monkeypatch.setattr(pdf_parser, "HAS_PDF", False)
     assert pdf_parser.parse_pdf(b"%PDF-1.4", {}) == []
+
+
+def test_parse_pdf_respects_max_total_chars(monkeypatch):
+    class DummyPage:
+        def __init__(self, text):
+            self._text = text
+            self.images = []
+
+        def extract_text(self):
+            return self._text
+
+    class DummyPdf:
+        def __init__(self, pages):
+            self.pages = pages
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    dummy_pdf = DummyPdf([DummyPage("ABCDE"), DummyPage("FGHIJ")])
+
+    def fake_open(*args, **kwargs):
+        return dummy_pdf
+
+    monkeypatch.setattr(pdf_parser, "HAS_PDF", True)
+    monkeypatch.setattr(pdf_parser, "pdfplumber", types.SimpleNamespace(open=fake_open))
+
+    res = pdf_parser.parse_pdf(b"%PDF-1.4", {"extract_text": True, "max_total_chars": 7})
+    assert res == ["ABCDE", "FG"]
 
 
 def test_parse_image_uses_languages_and_limits(monkeypatch):

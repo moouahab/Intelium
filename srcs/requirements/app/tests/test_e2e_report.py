@@ -132,3 +132,32 @@ def test_e2e_multi_sources_overrides_and_reports(tmp_path, dummy_config_model, m
     assert (tmp_path / "sources" / "a-d1.md").exists()
     assert ai_path == output_conf["ai_report"]["output"]
     assert ai_path.exists()
+
+
+def test_run_report_restores_base_on_incomplete_ai(tmp_path, monkeypatch):
+    pipeline_module = importlib.import_module("cti_core.pipeline")
+
+    results = [
+        {"url": "http://example.com", "name": "root", "type": "html", "status": "downloaded"},
+    ]
+
+    # IA retourne un texte incomplet pour forcer la restauration du rapport technique.
+    monkeypatch.setattr("tools.providers.ai.ai_report._run_llm", lambda *args, **kwargs: "INCOMPLET")
+
+    output_conf = {
+        "format": "markdown",
+        "file": tmp_path / "report.md",
+        "split_per_source": False,
+        "detail_dir": tmp_path / "sources",
+        "language": "fr",
+        "ai_report": {
+            "enabled": True,
+            "command": "echo ai",
+            "output": tmp_path / "report.md",
+            "required_sections": ["Résumé exécutif"],
+        },
+    }
+
+    report_path = pipeline_module.run_report(results, output_conf, logger=None)
+    content = report_path.read_text()
+    assert "# Rapport CTI" in content

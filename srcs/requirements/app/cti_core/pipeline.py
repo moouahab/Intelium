@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Tuple
 from cti_core.cli import render_progress, print_summary
 from cti_core.scraper import Scraper
 from tools.providers.ai.ai_report import generate_ai_report
+from tools.providers.ai.providers import is_complete as ai_is_complete
 from tools.interfaces import CacheBackend
 from tools.providers.cache_factory import build_cache
 from tools.reporting.report import write_report
@@ -43,7 +44,25 @@ def build_output_conf(base_conf: dict, force_ai_report: bool | None = None) -> d
 def run_report(results_payload: List[Dict[str, Any]], output_conf: dict, logger=None) -> Path:
     report_path = write_report(results_payload, output_conf)
     ai_conf = output_conf.get("ai_report", {})
-    generate_ai_report(results_payload, ai_conf, logger=logger)
+    base_text = None
+    if ai_conf.get("enabled"):
+        try:
+            base_text = report_path.read_text()
+        except Exception:
+            base_text = None
+    ai_path = generate_ai_report(results_payload, ai_conf, logger=logger)
+    if ai_conf.get("enabled") and ai_path:
+        required_sections = ai_conf.get("required_sections") or []
+        ai_output = Path(ai_conf.get("output") or ai_path)
+        if base_text is not None and ai_output.resolve() == report_path.resolve():
+            try:
+                text = ai_output.read_text()
+            except Exception:
+                text = None
+            if not ai_is_complete(text, required_sections=required_sections):
+                report_path.write_text(base_text)
+                if logger:
+                    logger.warning("Rapport IA incomplet : rapport technique restauré.")
     return report_path
 
 
