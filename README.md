@@ -7,7 +7,7 @@ Ce dépôt orchestre un agent CTI capable de collecter des sources (CERT/RSS/API
 - `srcs/docker-compose.yml` : services scraper/metrics/mongo/vault/prometheus/grafana.
 - `srcs/requirements/app/` : code Python (scraper, parseurs, config, scripts IA, tests).
 - `srcs/requirements/vault/scripts/init_vault.sh` : init + unseal Vault (dev).
-- `docs/` et `srcs/requirements/app/docs/` : guides d’archi, parsing, déploiement, sécurité, runbook, DevSecOps.
+- `docs/` et `srcs/requirements/app/docs/` : guides d’archi, parsing, déploiement, sécurité, runbook, DevSecOps, audit.
 
 ## Fonctionnement
 1) `main.py` lit `config/conf.yaml` et inclut le reste (`network.yaml`, `crawler.yaml`, `sources.yaml`, `scraping.yaml`, `output.yaml`, `auth.yaml`, etc.).
