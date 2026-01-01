@@ -42,6 +42,7 @@ sudo systemctl enable --now cti-scraper
 - Santé basique : scripter un “smoke test” (ex. `PYTHONPATH=. python -m pytest tests/test_e2e_report.py`) ou un run sur un petit set de sources de test pour valider l’environnement.
 - Intégration monitoring : exporter les statuts de scrape (succès/erreurs) via un script qui lit `data/cache.json` et envoie vers Prometheus/ELK si besoin.
 - Runbook : voir `docs/RUNBOOK.md` pour les vérifications post-redémarrage et les tests par service.
+- Metriques/DevSecOps : voir `docs/DEVSECOPS.md` pour l'analyse et l'interpretation.
 
 ## Sécurité & secrets
 - Ne pas committer `config/auth.yaml`.
