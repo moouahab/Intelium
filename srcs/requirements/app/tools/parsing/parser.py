@@ -8,8 +8,8 @@ from tools.parsers.pdf_parser import parse_pdf
 from tools.parsers.ocr_parser import parse_image
 from tools.parsers.txt_parser import parse_txt
 from tools.parsers.text_utils import ensure_text
-from tools.ioc_extractor import extract_iocs
-from tools.content_sanitizer import sanitize_html, sanitize_xml
+from tools.parsing.ioc_extractor import extract_iocs
+from tools.parsing.content_sanitizer import sanitize_html, sanitize_xml
 from tools.parsers.certkev import extract_certkev_entries, is_certkev_source
 from copy import deepcopy
 from typing import Optional

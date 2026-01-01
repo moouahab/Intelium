@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List
 
-from tools.extractor import Extractor
+from tools.parsing.extractor import Extractor
 from tools.keywords import find_keyword_hits
 from tools.parsers.text_utils import ensure_text
 from tools.result_entry import ResultEntry

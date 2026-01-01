@@ -1,5 +1,5 @@
 from tools.parsers.text_utils import ensure_text, safe_json_load, safe_csv_rows
-from tools.parser import parse_content
+from tools.parsing.parser import parse_content
 
 
 def test_ensure_text_handles_bytes_and_newlines():

@@ -1,7 +1,7 @@
 from typing import Optional, Set
 
 from cti_core.Source import Source
-from tools.html_links import extract_links
+from tools.parsing.html_links import extract_links
 from tools.providers.http.url_utils import normalize_url
 from tools.providers.http.url_policy import UrlPolicy
 from tools.config.overrides import normalize_overrides

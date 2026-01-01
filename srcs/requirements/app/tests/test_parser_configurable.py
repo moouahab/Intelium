@@ -1,4 +1,4 @@
-from tools import parser
+from tools.parsing import parser
 
 
 def test_parse_content_deduplicate_and_limit():

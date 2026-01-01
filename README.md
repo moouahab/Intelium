@@ -7,12 +7,12 @@ Ce dépôt orchestre un agent CTI capable de collecter des sources (CERT/RSS/API
 - `srcs/docker-compose.yml` : services scraper/metrics/mongo/vault/prometheus/grafana.
 - `srcs/requirements/app/` : code Python (scraper, parseurs, config, scripts IA, tests).
 - `srcs/requirements/vault/scripts/init_vault.sh` : init + unseal Vault (dev).
-- `docs/` et `srcs/requirements/app/docs/` : guides d’archi, parsing, déploiement, sécurité.
+- `docs/` et `srcs/requirements/app/docs/` : guides d’archi, parsing, déploiement, sécurité, runbook.
 
 ## Fonctionnement
 1) `main.py` lit `config/conf.yaml` et inclut le reste (`network.yaml`, `crawler.yaml`, `sources.yaml`, `scraping.yaml`, `output.yaml`, `auth.yaml`, etc.).
 2) `cti_core/scraper.py` télécharge chaque source (BFS configurable), respecte robots/délais/allowlist, stocke sous `docs/<type>/...`, calcule un hash/cache, et passe le contenu aux parseurs.
-3) `tools/parser.py` route vers les parseurs (HTML/API/XML/CSV/TXT/PDF/OCR) avec options par type et par source, extraction IOC et sanitation optionnelles.
+3) `tools/parsing/parser.py` route vers les parseurs (HTML/API/XML/CSV/TXT/PDF/OCR) avec options par type et par source, extraction IOC et sanitation optionnelles.
 4) `tools/report.py` génère les rapports Markdown/JSON, `tools/ai_report.py` peut appeler un LLM local (Mistral via CLI par défaut) pour synthèse CTI.
 5) Résumé JSON affiché en fin de run (statut, chemin sauvegardé, extraits).
 6) Quotas globaux optionnels (`crawler.global_max_pages/max_total_bytes`) pour couper un run trop volumineux ; les sources restantes sont marquées `skipped-quota`.

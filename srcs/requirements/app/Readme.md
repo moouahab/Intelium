@@ -37,13 +37,13 @@ Créer un agent intelligent capable de :
 1. Lecture de la config modulaire (`conf.yaml` + `include` des autres YAML).
 2. Chargement de la librairie de mots-clés (`data/keyword.json` avec fallback en cas de typo).
 3. Normalisation des sources (types supportés : html, api, xml, pdf, csv, txt, image, ignore).
-4. Téléchargement via `Source.download_manager` / `tools/download.py` et crawl :
+4. Téléchargement via `Source.download_manager` / `tools/providers/http/download.py` et crawl :
    - garde-fous réseau : HTTPS forcé, block_private, allowlist de domaines, limite de taille (`network.yaml`).
    - crawl (BFS) configurable (`crawler.yaml`) : profondeur/max pages, même domaine only, allowlist.
    - stockage : contenu écrit sous `docs/<type>/<nom_source>_<hôte>.ext`.
    - hash pour détecter les changements.
 5. Filtrage/IA/rapport (à implémenter) puis CI/CD (à venir).
-6. Parsing extensible : registre de parseurs (`ParserRegistry`) injectables dans `tools/parser.py` pour ajouter/remplacer un parseur sans toucher au core.
+6. Parsing extensible : registre de parseurs (`ParserRegistry`) injectables dans `tools/parsing/parser.py` pour ajouter/remplacer un parseur sans toucher au core.
 
 ## 🔧 Pré-requis
 - Python 3.10+

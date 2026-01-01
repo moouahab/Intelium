@@ -1,4 +1,4 @@
-from tools import parser
+from tools.parsing import parser
 
 
 def test_cvss_extraction_from_api_results():

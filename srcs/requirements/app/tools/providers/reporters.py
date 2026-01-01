@@ -70,6 +70,18 @@ class MarkdownReporter(_BaseReporter):
             lines.append("- Note : cache-only = données issues du cache (pas de téléchargement)")
         if "offline" in counts:
             lines.append("- Note : offline = mode cache-only activé sans cache disponible")
+        cache_hits = counts.get("skipped-cache", 0)
+        offline_hits = counts.get("offline", 0)
+        downloaded = counts.get("downloaded", 0)
+        total = len(results)
+        if cache_hits or offline_hits:
+            cache_pct = round((cache_hits / total) * 100) if total else 0
+            offline_pct = round((offline_hits / total) * 100) if total else 0
+            lines.append(
+                f"- Mode offline/seed : cache-only={cache_hits} ({cache_pct}%), offline={offline_hits} ({offline_pct}%)"
+            )
+            if downloaded == 0:
+                lines.append("- Alerte : aucun téléchargement réseau, rapport 100% cache/seed")
         lines.append("")
         return lines
 

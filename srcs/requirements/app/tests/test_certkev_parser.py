@@ -1,5 +1,5 @@
 from tools.parsers.certkev import extract_certkev_entries, is_certkev_source
-from tools import parser
+from tools.parsing import parser
 
 
 def test_extract_certkev_entries_with_context():

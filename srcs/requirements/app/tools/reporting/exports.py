@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 import csv
 import json as _json
 
-from tools.ioc_extractor import extract_iocs
+from tools.parsing.ioc_extractor import extract_iocs
 from tools.scorer import score_results
 
 

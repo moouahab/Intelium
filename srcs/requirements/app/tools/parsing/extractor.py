@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Any, Tuple
-import tools.parser as parser
+from tools.parsing import parser
 from tools.parsers.text_utils import ensure_text
 from tools.keywords import find_keyword_hits
 
