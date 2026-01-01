@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 import json
 import re
 
-from tools.report_sections import build_markdown_section, build_json_entry, format_status
+from tools.reporting.report_sections import build_markdown_section, build_json_entry, format_status
 
 
 def _slugify(value: str) -> str:

@@ -3,8 +3,8 @@ import logging
 from cti_core.config_model import ConfigModel
 from cti_core.pipeline import run_pipeline
 from tools.config.load_config import get_config_as_json_string
+from tools.providers.ai.ai_report import generate_ai_report
 from tools.logger_utils import setup_logger, log_structured
-from tools.ai_report import generate_ai_report
 from urllib.parse import urlparse
 from tools.preflight import check_env_requirements
 

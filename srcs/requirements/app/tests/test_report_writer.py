@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from tools.report_writer import ReportWriter
-from tools.ai_report import generate_ai_report
+from tools.reporting.report_writer import ReportWriter
+from tools.providers.ai.ai_report import generate_ai_report
 
 
 def _sample_results():
@@ -83,7 +83,7 @@ def test_ai_report_writes_file(tmp_path, monkeypatch):
         called["prompt"] = prompt
         return "AI REPORT FIN DU RAPPORT"
 
-    monkeypatch.setattr("tools.ai_report._run_llm", fake_run)
+    monkeypatch.setattr("tools.providers.ai.ai_report._run_llm", fake_run)
     out = tmp_path / "ai.md"
     tmpl = "PROMPT:\n{results_json}"
     res = generate_ai_report([{"url": "http://x"}], {"enabled": True, "command": "echo ai", "output": out, "prompt_template": tmpl})
@@ -98,13 +98,13 @@ def test_ai_report_disabled_returns_none(tmp_path):
 
 
 def test_ai_report_autodetect_returns_none_if_not_found(tmp_path, monkeypatch):
-    monkeypatch.setattr("tools.ai.command_plan.shutil.which", lambda cmd: None)
+    monkeypatch.setattr("tools.providers.ai.command_plan.shutil.which", lambda cmd: None)
     res = generate_ai_report([{"url": "http://x"}], {"enabled": True, "command": ""}, logger=None)
     assert res is None
 
 
 def test_ai_report_prompt_path(tmp_path, monkeypatch):
-    monkeypatch.setattr("tools.ai_report._run_llm", lambda command, prompt, timeout=120, **kwargs: "OK FIN DU RAPPORT")
+    monkeypatch.setattr("tools.providers.ai.ai_report._run_llm", lambda command, prompt, timeout=120, **kwargs: "OK FIN DU RAPPORT")
     prompt_file = tmp_path / "prompt.txt"
     prompt_file.write_text("PROMPT FILE {results_json}")
     out = tmp_path / "ai.md"
@@ -119,8 +119,8 @@ def test_ai_report_autodetect_codex(tmp_path, monkeypatch):
     # Simule la détection de "codex"
     def fake_which(cmd):
         return "/usr/bin/codex" if cmd == "codex" else None
-    monkeypatch.setattr("tools.ai.command_plan.shutil.which", fake_which)
-    monkeypatch.setattr("tools.ai_report._run_llm", lambda command, prompt, timeout=120, **kwargs: "OK FIN DU RAPPORT")
+    monkeypatch.setattr("tools.providers.ai.command_plan.shutil.which", fake_which)
+    monkeypatch.setattr("tools.providers.ai.ai_report._run_llm", lambda command, prompt, timeout=120, **kwargs: "OK FIN DU RAPPORT")
     out = tmp_path / "ai.md"
     res = generate_ai_report([{"url": "http://x"}], {"enabled": True, "command": "", "output": out})
     assert res == out

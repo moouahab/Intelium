@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from tools import ai_report
+from tools.providers.ai import ai_report
 
 
 def test_load_template_from_yaml_prompt_key(tmp_path):

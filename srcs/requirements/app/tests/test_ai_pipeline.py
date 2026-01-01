@@ -1,4 +1,4 @@
-from tools.ai_pipeline import LangGraphRunner, _validate_report_text, build_cli_llm
+from tools.providers.ai.ai_pipeline import LangGraphRunner, _validate_report_text, build_cli_llm
 
 
 def test_langgraph_runner_builds_prompt_and_uses_llm():

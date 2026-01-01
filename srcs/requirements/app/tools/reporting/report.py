@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import List, Dict, Any
-from tools.report_writer import ReportWriter
+from tools.reporting.report_writer import ReportWriter
 from tools.scorer import score_results
 from tools.ioc_extractor import extract_iocs
 from tools.interfaces import Reporter

@@ -5,10 +5,10 @@ from typing import Any, Dict, List, Tuple
 
 from cti_core.cli import render_progress, print_summary
 from cti_core.scraper import Scraper
-from tools.ai_report import generate_ai_report
+from tools.providers.ai.ai_report import generate_ai_report
 from tools.interfaces import CacheBackend
 from tools.providers.cache_factory import build_cache
-from tools.report import write_report
+from tools.reporting.report import write_report
 from tools.result_entry import ResultEntry, normalize_results
 from cti_core.pipeline_steps import enrich_results, score_results_payload
 

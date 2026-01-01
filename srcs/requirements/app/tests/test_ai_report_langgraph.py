@@ -1,6 +1,6 @@
 from pathlib import Path
-from tools import ai_report
-from tools import ai_pipeline
+from tools.providers.ai import ai_report
+from tools.providers.ai import ai_pipeline
 
 
 def test_generate_ai_report_langgraph_mode(monkeypatch, tmp_path):

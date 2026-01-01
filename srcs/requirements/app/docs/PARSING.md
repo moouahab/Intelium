@@ -19,5 +19,5 @@
 - **txt** : retourne le texte brut.
 
 ## Rapport
-- Généré via `tools/report.py` (markdown ou json selon `output.format`, fichier `output.file`).
+- Généré via `tools/reporting/report.py` (markdown ou json selon `output.format`, fichier `output.file`).
 - Contient statut, chemin enregistré, extraits (limités) par source.

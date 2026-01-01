@@ -6,10 +6,10 @@ import re
 import time
 from typing import Any, Dict, List, Optional, Callable
 
-from tools.ai.prompt_config import PromptConfig
-from tools.ai.command_plan import AiCommandPlan, build_command_plan, detect_local_llm
-from tools.ai_pipeline import LangGraphRunner
-from tools.ai_runner import run_cli_llm
+from tools.providers.ai.prompt_config import PromptConfig
+from tools.providers.ai.command_plan import AiCommandPlan, build_command_plan, detect_local_llm
+from tools.providers.ai.ai_pipeline import LangGraphRunner
+from tools.providers.ai.ai_runner import run_cli_llm
 from tools.interfaces import AIProvider
 from tools.scorer import score_results
 

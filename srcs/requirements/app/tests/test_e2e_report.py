@@ -9,7 +9,7 @@ def test_e2e_scrape_to_report(tmp_path, dummy_config_model):
     scraper_module = importlib.import_module("cti_core.scraper")
     source_module = importlib.import_module("cti_core.Source")
     runner_module = importlib.import_module("cti_core.runner")
-    report_module = importlib.import_module("tools.report")
+    report_module = importlib.import_module("tools.reporting.report")
 
     root_url = "http://example.com"
     root_source = source_module.Source({"url": root_url, "type": "html", "name": "root"})
@@ -44,7 +44,7 @@ def test_runner_ai_report_with_prompt_path(tmp_path, monkeypatch, dummy_config_m
     runner_module = importlib.import_module("cti_core.runner")
     scraper_module = importlib.import_module("cti_core.scraper")
     source_module = importlib.import_module("cti_core.Source")
-    report_module = importlib.import_module("tools.report")
+    report_module = importlib.import_module("tools.reporting.report")
 
     prompt_file = tmp_path / "prompt.txt"
     prompt_file.write_text("PROMPT {results_json}")
@@ -63,7 +63,7 @@ def test_runner_ai_report_with_prompt_path(tmp_path, monkeypatch, dummy_config_m
     results = scraper.run()
 
     # Mock LLM call
-    monkeypatch.setattr("tools.ai_report._run_llm", lambda cmd, prompt, timeout=120, **kwargs: "AI OK FIN DU RAPPORT")
+    monkeypatch.setattr("tools.providers.ai.ai_report._run_llm", lambda cmd, prompt, timeout=120, **kwargs: "AI OK FIN DU RAPPORT")
 
     output_conf = {
         "format": "markdown",
@@ -84,7 +84,7 @@ def test_runner_ai_report_with_prompt_path(tmp_path, monkeypatch, dummy_config_m
 def test_e2e_multi_sources_overrides_and_reports(tmp_path, dummy_config_model, monkeypatch):
     scraper_module = importlib.import_module("cti_core.scraper")
     source_module = importlib.import_module("cti_core.Source")
-    report_module = importlib.import_module("tools.report")
+    report_module = importlib.import_module("tools.reporting.report")
     runner_module = importlib.import_module("cti_core.runner")
 
     s1 = source_module.Source({"url": "http://a.com", "type": "html", "name": "a"})
@@ -122,7 +122,7 @@ def test_e2e_multi_sources_overrides_and_reports(tmp_path, dummy_config_model, m
         "ai_report": {"enabled": True, "command": "echo ai", "output": tmp_path / "ai.md"},
     }
     # mock IA
-    monkeypatch.setattr("tools.ai_report._run_llm", lambda cmd, prompt, timeout=120, **kwargs: "AI OK FIN DU RAPPORT")
+    monkeypatch.setattr("tools.providers.ai.ai_report._run_llm", lambda cmd, prompt, timeout=120, **kwargs: "AI OK FIN DU RAPPORT")
     report_path = report_module.write_report(results, output_conf)
     ai_path = runner_module.generate_ai_report(results, output_conf.get("ai_report", {}))
 

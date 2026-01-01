@@ -1,4 +1,4 @@
-from tools.ai_report import _is_complete
+from tools.providers.ai.ai_report import _is_complete
 
 
 def test_is_complete_requires_marker():

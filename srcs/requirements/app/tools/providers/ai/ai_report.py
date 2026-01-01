@@ -5,10 +5,10 @@ L'outil se contente de construire un prompt et d'appeler une commande locale (pa
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from tools.ai_runner import run_cli_llm
-from tools.ai import PromptConfig
+from tools.providers.ai.ai_runner import run_cli_llm
+from tools.providers.ai.prompt_config import PromptConfig
 from tools.interfaces import AIProvider
-from tools.ai.providers import DefaultAIProvider, is_complete as _is_complete
+from tools.providers.ai.providers import DefaultAIProvider, is_complete as _is_complete
 from tools.result_entry import normalize_results
 
 
