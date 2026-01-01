@@ -1,17 +1,12 @@
 import logging
 
 from cti_core.config_model import ConfigModel
-from cti_core.scraper import Scraper
+from cti_core.pipeline import run_pipeline
 from tools.config.load_config import get_config_as_json_string
-from tools.providers.cache_factory import build_cache
-from tools.interfaces import CacheBackend
 from tools.logger_utils import setup_logger, log_structured
-from tools.report import write_report
-from cti_core.cli import render_progress, print_summary
 from tools.ai_report import generate_ai_report
 from urllib.parse import urlparse
 from tools.preflight import check_env_requirements
-from tools.result_entry import normalize_results
 
 
 def _validate_allowlist(config_model: ConfigModel, logger) -> bool:
@@ -30,10 +25,6 @@ def _validate_allowlist(config_model: ConfigModel, logger) -> bool:
         logger.error("Sources hors allowlist : %s", msg)
         return False
     return True
-
-
-def build_cache_manager(cache_conf: dict) -> CacheBackend:
-    return build_cache(cache_conf)
 
 
 def run(config_path: str = "config/conf.yaml", force_ai_report: bool | None = None):
@@ -69,25 +60,4 @@ def run(config_path: str = "config/conf.yaml", force_ai_report: bool | None = No
     logger.info("🔑 Catégories de mots-clés : %s", list(config_model.keywords.keys()))
     logger.info("🌐 Sources configurées : %s", [src.get("name") for src in config_model.sources])
 
-    cache_manager = build_cache_manager(config_model.yaml_config.get("cache", {}))
-
-    total_sources = len(config_model.source_objects)
-    render_progress(0, total_sources, "initialisation", "")
-    scraper = Scraper(config_model, cache_manager)
-    results = scraper.run()
-    results_payload = normalize_results(results)
-    render_progress(total_sources, total_sources, "terminé", "")
-    print()  # fin de barre
-    # Rapport et résumé JSON
-    output_conf = config_model.yaml_config.get("output", {})
-    # override éventuel du flag IA
-    if force_ai_report is not None:
-        output_conf = dict(output_conf)
-        ai_conf = dict(output_conf.get("ai_report", {}))
-        ai_conf["enabled"] = force_ai_report
-        output_conf["ai_report"] = ai_conf
-    report_path = write_report(results_payload, output_conf)
-    # Rapport IA optionnel
-    ai_conf = output_conf.get("ai_report", {})
-    generate_ai_report(results_payload, ai_conf, logger=logger)
-    print_summary(results_payload, report_path=str(report_path))
+    run_pipeline(config_model, logger=logger, force_ai_report=force_ai_report)
