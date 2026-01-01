@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Optional, Set
 
 from tools.download_types import NetworkPolicy
-from tools.config_utils import to_int, to_bool
+from tools.config.config_utils import to_int, to_bool
 
 
 def build_network_policy(network_conf: dict[str, Any]) -> NetworkPolicy:

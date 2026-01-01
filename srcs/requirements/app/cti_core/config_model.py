@@ -2,18 +2,18 @@
 from pathlib import Path
 import re
 from typing import Any, List
-from tools.load_config import (
+from tools.config.load_config import (
     load_yaml_config,
     load_keywords_from_config,
     get_config_as_json_string,
 )
-from tools.config_builders import build_network_policy, build_crawler_settings, build_http_client_settings
+from tools.config.config_builders import build_network_policy, build_crawler_settings, build_http_client_settings
 from .Source import Source
 from tools.download_types import StorageTarget
 from tools.auth import load_auth
 from tools.validators import validate_auth, validate_crawler, validate_output
-from tools.config_validator import validate_config
-from tools.overrides import normalize_overrides
+from tools.config.config_validator import validate_config
+from tools.config.overrides import normalize_overrides
 
 
 SUPPORTED_SOURCE_TYPES = {"html", "api", "xml", "pdf", "csv", "txt", "image", "ignore"}

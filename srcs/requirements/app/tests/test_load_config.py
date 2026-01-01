@@ -1,7 +1,7 @@
 import os
 import json
 import pytest
-from tools.load_config import (
+from tools.config.load_config import (
     load_yaml_config,
     get_config_as_json_string,
     load_keywords_from_config,

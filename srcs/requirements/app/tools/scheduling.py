@@ -4,7 +4,7 @@ import datetime as dt
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from tools.config_utils import to_bool, to_int
+from tools.config.config_utils import to_bool, to_int
 
 
 def parse_interval_seconds(value: Any, default: int = 3600) -> int:

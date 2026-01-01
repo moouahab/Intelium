@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List
 
-from tools.reporters import build_reporter, is_vuln_entry
+from tools.providers.reporters import build_reporter, is_vuln_entry
 from tools.result_entry import normalize_results
 
 

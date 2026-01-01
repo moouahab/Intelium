@@ -1,4 +1,4 @@
-from tools.config_utils import to_int, to_bool
+from tools.config.config_utils import to_int, to_bool
 
 
 def test_to_int_with_defaults():

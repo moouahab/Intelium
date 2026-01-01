@@ -1,4 +1,4 @@
-from tools.config_validator import validate_config
+from tools.config.config_validator import validate_config
 
 
 def test_validate_config_output_and_auth():

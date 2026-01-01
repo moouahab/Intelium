@@ -1,5 +1,5 @@
-from tools.config_builders import build_http_client_settings
-from tools.config_builders import build_crawler_settings
+from tools.config.config_builders import build_http_client_settings
+from tools.config.config_builders import build_crawler_settings
 
 
 def test_build_http_client_settings_defaults_and_overrides():

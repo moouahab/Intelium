@@ -1,5 +1,5 @@
 from tools.interfaces import CacheBackend
-from tools.cache_store import build_cache_store
+from tools.providers.cache_store import build_cache_store
 
 
 def build_cache(cache_conf: dict) -> CacheBackend:

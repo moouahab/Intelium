@@ -10,7 +10,7 @@ from tools.http.policies import RobotsDelayPolicy
 from tools.http.request_context import build_request_context
 from tools.logger_utils import mask_sensitive_headers
 from tools.http.headless import fetch_headless, HeadlessStrategy, get_default_headless_strategy
-from tools.metrics import record_fetch
+from tools.observability.metrics import record_fetch
 from urllib.parse import urlparse, urlunparse
 
 

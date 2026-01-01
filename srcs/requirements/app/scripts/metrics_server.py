@@ -11,7 +11,7 @@ import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
-from scripts.health_summary import load_health, summary, print_prometheus
+from tools.observability.health_summary import load_health, summary, print_prometheus
 
 
 class MetricsHandler(BaseHTTPRequestHandler):

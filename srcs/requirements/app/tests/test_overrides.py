@@ -1,4 +1,4 @@
-from tools.overrides import normalize_overrides, merge_headers
+from tools.config.overrides import normalize_overrides, merge_headers
 
 
 def test_normalize_overrides_headers_and_user_agent():

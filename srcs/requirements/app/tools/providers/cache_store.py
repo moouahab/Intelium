@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from tools.cache import CacheManager, CacheRegistry
-from tools.cache_mongo import MongoCache
+from tools.providers.cache_mongo import MongoCache
 from tools.interfaces import CacheStore
 from tools.secrets import get_secret
 

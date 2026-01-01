@@ -1,6 +1,6 @@
 from pathlib import Path
 from tools.cache import CacheManager, CacheEntry, CacheRegistry
-from tools.cache_store import build_cache_store, FileCacheStore, PerSiteCacheStore, MongoCacheStore
+from tools.providers.cache_store import build_cache_store, FileCacheStore, PerSiteCacheStore, MongoCacheStore
 
 
 def test_cache_manager_load_and_update(tmp_path):

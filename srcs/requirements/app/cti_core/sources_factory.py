@@ -4,7 +4,7 @@ from cti_core.Source import Source
 from tools.html_links import extract_links
 from tools.http.url_utils import normalize_url
 from tools.http.url_policy import UrlPolicy
-from tools.overrides import normalize_overrides
+from tools.config.overrides import normalize_overrides
 
 
 def enqueue_links(current: Source, depth: int, state, max_depth: int, url_policy: UrlPolicy):

@@ -11,9 +11,9 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from tools.load_config import load_yaml_config
+from tools.config.load_config import load_yaml_config
 from tools.scheduling import load_schedule_config, compute_initial_delay
-from tools.metrics import RunMetrics, record_run
+from tools.observability.metrics import RunMetrics, record_run
 from cti_core.runner import run
 
 

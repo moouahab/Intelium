@@ -17,7 +17,7 @@ import argparse
 import json
 from pathlib import Path
 
-from tools.cache_store import FileCacheStore, PerSiteCacheStore, MongoCacheStore
+from tools.providers.cache_store import FileCacheStore, PerSiteCacheStore, MongoCacheStore
 from tools.secrets import get_secret
 
 

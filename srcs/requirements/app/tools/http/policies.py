@@ -3,7 +3,7 @@ import threading
 import urllib.robotparser
 from urllib.parse import urlparse
 from tools.download_types import NetworkPolicy
-from tools.config_utils import to_int
+from tools.config.config_utils import to_int
 
 
 class RobotsDelayPolicy:

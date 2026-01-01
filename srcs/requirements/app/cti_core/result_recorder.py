@@ -1,7 +1,7 @@
 import threading
 from tools.interfaces import CacheBackend
 from cti_core.Source import Source
-from tools.result_store import build_result_store, ResultStore
+from tools.providers.result_store import build_result_store, ResultStore
 from tools.result_entry import ResultEntry
 from tools.scorer import compute_confidence
 

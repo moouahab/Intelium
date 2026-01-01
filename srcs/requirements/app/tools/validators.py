@@ -1,7 +1,7 @@
 from typing import List
 from pathlib import Path
 from tools.http.url_utils import resolve_normalizer
-from tools.config_utils import to_bool
+from tools.config.config_utils import to_bool
 
 
 def validate_auth(auth_conf: dict) -> List[str]:

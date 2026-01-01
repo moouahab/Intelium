@@ -2,8 +2,8 @@ import logging
 
 from cti_core.config_model import ConfigModel
 from cti_core.scraper import Scraper
-from tools.load_config import get_config_as_json_string
-from tools.cache_factory import build_cache
+from tools.config.load_config import get_config_as_json_string
+from tools.providers.cache_factory import build_cache
 from tools.interfaces import CacheBackend
 from tools.logger_utils import setup_logger, log_structured
 from tools.report import write_report

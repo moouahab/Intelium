@@ -1,5 +1,5 @@
 from pathlib import Path
-from tools import metrics
+from tools.observability import metrics
 
 
 def test_record_fetch_tracks_status_reason_and_bytes(tmp_path):
