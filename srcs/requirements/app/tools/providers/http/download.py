@@ -9,7 +9,7 @@ from tools.providers.http import network
 from tools.parsers.text_utils import ensure_text
 from tools.providers.http.request_context import RequestContext
 from tools.content_sanitizer import sanitize_html, sanitize_xml
-from tools.scanner import run_scan
+from tools.providers.http.scanner import run_scan
 
 
 def _persist_content(

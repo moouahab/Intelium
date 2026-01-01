@@ -1,5 +1,5 @@
 from pathlib import Path
-from tools.scanner import run_scan
+from tools.providers.http.scanner import run_scan
 
 
 def test_run_scan_success(tmp_path):
