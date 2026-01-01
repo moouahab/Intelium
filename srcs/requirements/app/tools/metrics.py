@@ -79,6 +79,7 @@ def record_fetch(
             "fetch",
             {"total": 0, "success": 0, "failure": 0, "duration_sum": 0.0, "reasons": {}, "per_status": {}, "bytes_total": 0},
         )
+        fetch.setdefault("bytes_total", 0)
         reasons = fetch.setdefault("reasons", {})
         per_status = fetch.setdefault("per_status", {})
         fetch["bytes_total"] += int(size_bytes or 0)

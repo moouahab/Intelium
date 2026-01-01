@@ -16,12 +16,15 @@ class Extractor:
         self.keywords = keywords or {}
 
     def extract(self, source_type: str, content: Any, source_name: str | None = None) -> Tuple[list[str], dict]:
-        extracted = parser.parse_content(
-            source_type,
-            content,
-            self.scraping_settings,
-            source_name=source_name,
-        )
+        try:
+            extracted = parser.parse_content(
+                source_type,
+                content,
+                self.scraping_settings,
+                source_name=source_name,
+            ) or []
+        except Exception:
+            extracted = []
         texts_for_match = list(extracted)
         raw_text = ensure_text(content) if content is not None else ""
         if raw_text:
