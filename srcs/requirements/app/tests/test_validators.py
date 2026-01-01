@@ -1,6 +1,6 @@
-from tools.validators import validate_output, validate_auth
+from tools.config.validators import validate_output, validate_auth
 from tools.http.url_utils import resolve_normalizer
-from tools.validators import validate_crawler
+from tools.config.validators import validate_crawler
 
 
 def test_validate_output_format_and_ai_report_dict():

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Tuple, List
 
-from tools.validators import validate_auth, validate_crawler, validate_output
+from tools.config.validators import validate_auth, validate_crawler, validate_output
 
 
 def validate_config(config: dict) -> Tuple[List[str], List[str]]:

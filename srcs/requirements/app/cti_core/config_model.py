@@ -11,7 +11,7 @@ from tools.config.config_builders import build_network_policy, build_crawler_set
 from .Source import Source
 from tools.download_types import StorageTarget
 from tools.auth import load_auth
-from tools.validators import validate_auth, validate_crawler, validate_output
+from tools.config.validators import validate_auth, validate_crawler, validate_output
 from tools.config.config_validator import validate_config
 from tools.config.overrides import normalize_overrides
 
