@@ -28,6 +28,7 @@ def summary(payload: dict) -> dict:
     avg_duration = (duration_sum / total) if total else 0.0
     last_run = payload.get("last_run") or {}
     counters = payload.get("counters") or {}
+    last_run_at = payload.get("last_run_at")
     return {
         "fetch_total": total,
         "fetch_success": success,
@@ -42,6 +43,7 @@ def summary(payload: dict) -> dict:
         "runs_failure": counters.get("failure", 0),
         "last_run_status": last_run.get("status"),
         "last_run_duration": last_run.get("duration_seconds"),
+        "last_run_at": last_run_at,
     }
 
 

@@ -63,6 +63,13 @@ class MongoCache:
         extracted: Optional[list] = None,
         keywords: Optional[dict] = None,
     ) -> CacheEntry:
+        if extracted is None or keywords is None:
+            existing = self.get(url)
+            if existing:
+                if extracted is None:
+                    extracted = existing.extracted
+                if keywords is None:
+                    keywords = existing.keywords
         entry = CacheEntry(
             url=url,
             type=source_type,

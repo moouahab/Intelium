@@ -95,6 +95,12 @@ class CacheManager:
         extracted: Optional[list] = None,
         keywords: Optional[dict] = None,
     ) -> CacheEntry:
+        existing = self.get(url)
+        if existing:
+            if extracted is None:
+                extracted = existing.extracted
+            if keywords is None:
+                keywords = existing.keywords
         if date is None:
             date = datetime.now(timezone.utc).isoformat()
         entry = CacheEntry(

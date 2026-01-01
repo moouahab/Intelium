@@ -70,6 +70,7 @@
 - `strict_env` : si true, bloque le run si des variables requises sont manquantes.
 - `require_auth_env` : vérifie que toutes les variables `${ENV_VAR}` dans `auth.yaml` sont présentes.
 - `require_alerting_env` : vérifie les variables Slack/SMTP pour Alertmanager.
+- `require_allowlist` : refuse un run si l’allowlist est vide (sécurité).
 - `required_env` : liste supplémentaire à vérifier.
 
 ## Mode headless

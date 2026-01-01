@@ -22,10 +22,11 @@ class DummyLogger:
 
 
 class DummyConfig:
-    def __init__(self, allow_domains, sources):
+    def __init__(self, allow_domains, sources, ops=None):
         self.network_policy = type("NP", (), {"allow_domains": allow_domains})()
         self.crawler_settings = {"allow_domains": set()}
         self.source_objects = sources
+        self.yaml_config = {"ops": ops or {}}
 
 
 def test_validate_allowlist_accepts_in_scope():
@@ -40,3 +41,10 @@ def test_validate_allowlist_rejects_out_of_scope():
     logger = DummyLogger()
     assert _validate_allowlist(cfg, logger) is False
     assert any("Sources hors allowlist" in e for e in logger.errors)
+
+
+def test_validate_allowlist_requires_allowlist_when_configured():
+    cfg = DummyConfig(set(), [DummySource("http://example.com", "src")], ops={"require_allowlist": True})
+    logger = DummyLogger()
+    assert _validate_allowlist(cfg, logger) is False
+    assert any("Allowlist requise" in e for e in logger.errors)

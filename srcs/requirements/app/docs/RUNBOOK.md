@@ -52,6 +52,7 @@ Ce guide décrit quoi vérifier après un redémarrage et comment tester chaque 
 | Alertmanager redémarre en boucle | Variables d’alerting vides/invalides | Renseigner `SLACK_WEBHOOK_URL`, `ALERT_EMAIL_*`, `SMTP_*` dans `.env` |
 | Port 9093 fermé | Alertmanager n’a pas chargé sa config | Vérifier le log du conteneur et corriger les variables d’alerting |
 | Scraper s’arrête immédiatement | Pré‑check strict et env manquantes | Ajouter les variables exigées ou désactiver `ops.strict_env` |
+| Run bloque "Allowlist requise" | `ops.require_allowlist: true` et allowlist vide | Remplir `allow_domains` dans `config/network.yaml` |
 | Rapport “vide” | Sources bloquées (robots/cache) ou offline sans cache | Vérifier le statut “skipped-cache/offline”, relancer avec accès réseau |
 | Rapport “100% cache/seed” | Aucun download réseau | Vérifier allowlist/robots/proxy et la connectivité |
 | Métriques non visibles | Service metrics KO ou port non exposé | Vérifier `cti-metrics`, port `9000`, et que Prometheus pointe dessus |

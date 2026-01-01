@@ -16,10 +16,12 @@ class ResultRecorder:
         cache: CacheBackend,
         results_store: list[ResultEntry],
         result_store: ResultStore | None = None,
+        run_meta: dict | None = None,
     ):
         self.cache = cache
         self.results = results_store
         self.result_store = result_store or build_result_store()
+        self.run_meta = dict(run_meta or {})
         self._lock = threading.Lock()
 
     def record_cache_hit(self, source: Source, cached_entry, extracted=None, keyword_hits=None) -> None:
@@ -32,6 +34,8 @@ class ResultRecorder:
                 date=cached_entry.date,
                 error=None,
                 saved_path=cached_entry.saved_path,
+                extracted=extracted,
+                keywords=keyword_hits,
             )
             record = ResultEntry(
                 url=source.url,
@@ -46,6 +50,8 @@ class ResultRecorder:
                     {"status": "skipped-cache", "extracted": extracted or [], "keywords": keyword_hits or {}}
                 ),
             )
+            if self.run_meta:
+                record.extra.update(self.run_meta)
             self.results.append(record)
             self.result_store.save(record.to_dict())
 
@@ -75,6 +81,8 @@ class ResultRecorder:
                 keywords=keyword_hits or None,
                 confidence=conf,
             )
+            if self.run_meta:
+                record.extra.update(self.run_meta)
             self.results.append(record)
             self.result_store.save(record.to_dict())
 

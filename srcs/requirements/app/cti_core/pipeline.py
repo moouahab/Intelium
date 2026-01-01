@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
+from datetime import datetime, timezone
+import uuid
 
 from cti_core.cli import render_progress, print_summary
 from cti_core.scraper import Scraper
@@ -18,10 +20,10 @@ def build_cache_manager(cache_conf: dict) -> CacheBackend:
     return build_cache(cache_conf)
 
 
-def run_fetch(config_model, cache_manager: CacheBackend) -> List[ResultEntry]:
+def run_fetch(config_model, cache_manager: CacheBackend, run_meta: dict | None = None) -> List[ResultEntry]:
     total_sources = len(config_model.source_objects)
     render_progress(0, total_sources, "initialisation", "")
-    scraper = Scraper(config_model, cache_manager)
+    scraper = Scraper(config_model, cache_manager, run_meta=run_meta)
     results = scraper.run()
     render_progress(total_sources, total_sources, "terminé", "")
     print()  # fin de barre
@@ -67,8 +69,12 @@ def run_report(results_payload: List[Dict[str, Any]], output_conf: dict, logger=
 
 
 def run_pipeline(config_model, logger=None, force_ai_report: bool | None = None) -> Tuple[List[Dict[str, Any]], Path]:
+    run_meta = {
+        "run_id": uuid.uuid4().hex,
+        "run_started_at": datetime.now(timezone.utc).isoformat(),
+    }
     cache_manager = build_cache_manager(config_model.yaml_config.get("cache", {}))
-    results = run_fetch(config_model, cache_manager)
+    results = run_fetch(config_model, cache_manager, run_meta=run_meta)
     output_conf = build_output_conf(config_model.yaml_config.get("output", {}), force_ai_report=force_ai_report)
     enrich_results(results, config_model)
     results_payload = prepare_results(results)

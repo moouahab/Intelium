@@ -26,6 +26,7 @@ class Scraper:
         cache_manager: CacheBackend,
         http_client: GenericFetcher | None = None,
         extractor: Extractor | None = None,
+        run_meta: dict | None = None,
     ):
         self.config_model = config_model
         self.cache = cache_manager
@@ -47,7 +48,7 @@ class Scraper:
             normalizer_name=crawler_conf.get("url_normalizer", "strip"),
         )
         self.fetcher = build_fetcher(config_model, http_client=http_client)
-        self.recorder = ResultRecorder(self.cache, self.results)
+        self.recorder = ResultRecorder(self.cache, self.results, run_meta=run_meta)
         self.extractor = extractor or Extractor(self.config_model.scraping_settings, getattr(self.config_model, "keywords", {}))
 
     def _normalize_url(self, url: str) -> str:

@@ -14,6 +14,7 @@ Ce scraper doit rester dans un périmètre autorisé et respectueux. Quelques r�
 
 ## Périmètre autorisé
 - **Allowlist stricte** : n’ajoutez que des domaines explicitement autorisés dans `config/network.yaml` (`allow_domains`). Pas de wildcard.
+- **Allowlist requise** : `ops.require_allowlist: true` bloque un run si l’allowlist est vide.
 - **Block privé** : gardez `block_private: true` pour empêcher les accès réseaux internes/privés.
 - **HTTPS** : conservez `enforce_https: true` pour éviter le HTTP en clair.
 - **Robots/délais** : respectez `respect_robots: true` et un `crawl_delay_seconds` raisonnable.

@@ -10,10 +10,15 @@ from tools.preflight import check_env_requirements
 
 
 def _validate_allowlist(config_model: ConfigModel, logger) -> bool:
+    ops_conf = getattr(config_model, "yaml_config", {}).get("ops", {}) or {}
+    require_allowlist = bool(ops_conf.get("require_allowlist", False))
     allow = config_model.network_policy.allow_domains or set()
     if not allow:
         allow = config_model.crawler_settings.get("allow_domains") or set()
     if not allow:
+        if require_allowlist:
+            logger.error("Allowlist requise mais vide.")
+            return False
         return True
     invalid = []
     for src in config_model.source_objects:

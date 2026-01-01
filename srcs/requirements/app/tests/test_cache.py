@@ -54,6 +54,27 @@ def test_cache_record_scrape_auto_save(tmp_path):
     assert entry.saved_path == "/tmp/file.html"
 
 
+def test_cache_record_scrape_preserves_extracted_and_keywords(tmp_path):
+    cache_file = tmp_path / "cache.json"
+    manager = CacheManager(cache_file, auto_save=False)
+    manager.record_scrape(
+        url="https://target.com/page",
+        source_type="html",
+        status="downloaded",
+        extracted=["alpha"],
+        keywords={"indicator": ["beta"]},
+    )
+    manager.record_scrape(
+        url="https://target.com/page",
+        source_type="html",
+        status="skipped-cache",
+    )
+    entry = manager.get("https://target.com/page")
+    assert entry is not None
+    assert entry.extracted == ["alpha"]
+    assert entry.keywords == {"indicator": ["beta"]}
+
+
 def test_cache_registry_separate_files(tmp_path):
     base_dir = tmp_path / "caches"
     registry = CacheRegistry(base_dir, auto_save=True)

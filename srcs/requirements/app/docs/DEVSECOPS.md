@@ -20,6 +20,10 @@ Ce guide explique comment lire et exploiter les metriques du scraper pour l'expl
 - `cti_runs_total`: nombre total de runs.
 - `cti_runs_success`: runs reussis.
 - `cti_runs_failure`: runs en echec.
+- `cti_last_run_success`: 1 si le dernier run est OK.
+- `cti_last_run_failure`: 1 si le dernier run est en echec.
+- `cti_last_run_duration_seconds`: duree du dernier run.
+- `cti_last_run_timestamp`: timestamp Unix du dernier run.
 - `cti_fetch_reason_total{reason="..."}`: compteur par raison (error, blocked-robots, offline, etc.).
 - `cti_fetch_status_total{status="..."}`: compteur par statut (downloaded, skipped-cache, offline, skipped-quota, etc.).
 
@@ -44,6 +48,8 @@ Ce guide explique comment lire et exploiter les metriques du scraper pour l'expl
 - Offline/cache-only (30 min):
   - `increase(cti_fetch_status_total{status="offline"}[30m])`
   - `increase(cti_fetch_status_total{status="skipped-cache"}[30m])`
+- Dernier run en echec:
+  - `cti_last_run_failure == 1`
 
 ## Alertes par defaut
 Regles dans `srcs/prometheus_rules.yml`:
@@ -51,6 +57,7 @@ Regles dans `srcs/prometheus_rules.yml`:
 - **CTIHighRunFailureRate**: > 20% de runs en echec (1h).
 - **CTIMetricsMissing**: endpoint metrics down.
 - **CTIQuotaTriggered**: quota global atteint.
+- **CTILastRunFailed**: dernier run en echec.
 
 ## Lecture securite (DevSecOps)
 - **Blocage robots/allowlist**: peut signaler un changement de politique ou un domaine non autorise.

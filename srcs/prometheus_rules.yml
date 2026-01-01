@@ -23,6 +23,15 @@ groups:
           summary: "Taux d'échec des runs élevé"
           description: "Plus de 20% des orchestrations sont en échec sur la dernière heure."
 
+      - alert: CTILastRunFailed
+        expr: cti_last_run_failure == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Dernier run en echec"
+          description: "Le dernier run a echoue (voir logs/orchestrator)."
+
       - alert: CTIMetricsMissing
         expr: up{job="cti-metrics"} == 0
         for: 5m

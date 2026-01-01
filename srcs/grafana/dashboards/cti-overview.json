@@ -31,14 +31,28 @@
         "uid": "PBFA97CFB590B2093"
       },
       "targets": [
-        { "expr": "cti_fetch_success", "refId": "A" }
+        {
+          "expr": "cti_fetch_success",
+          "refId": "A"
+        }
       ],
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
         "orientation": "auto",
         "textMode": "auto"
       },
-      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 }
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      }
     },
     {
       "id": 2,
@@ -49,14 +63,28 @@
         "uid": "PBFA97CFB590B2093"
       },
       "targets": [
-        { "expr": "cti_fetch_failure", "refId": "A" }
+        {
+          "expr": "cti_fetch_failure",
+          "refId": "A"
+        }
       ],
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
         "orientation": "auto",
         "textMode": "auto"
       },
-      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 }
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 0
+      }
     },
     {
       "id": 3,
@@ -67,16 +95,32 @@
         "uid": "PBFA97CFB590B2093"
       },
       "targets": [
-        { "expr": "cti_fetch_bytes_total", "refId": "A" }
+        {
+          "expr": "cti_fetch_bytes_total",
+          "refId": "A"
+        }
       ],
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
         "orientation": "auto",
         "textMode": "value"
       },
-      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
       "fieldConfig": {
-        "defaults": { "unit": "bytes" },
+        "defaults": {
+          "unit": "bytes"
+        },
         "overrides": []
       }
     },
@@ -89,16 +133,32 @@
         "uid": "PBFA97CFB590B2093"
       },
       "targets": [
-        { "expr": "cti_fetch_avg_duration_seconds", "refId": "A" }
+        {
+          "expr": "cti_fetch_avg_duration_seconds",
+          "refId": "A"
+        }
       ],
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
         "orientation": "auto",
         "textMode": "auto"
       },
-      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 0
+      },
       "fieldConfig": {
-        "defaults": { "unit": "s" },
+        "defaults": {
+          "unit": "s"
+        },
         "overrides": []
       }
     },
@@ -111,18 +171,35 @@
         "uid": "PBFA97CFB590B2093"
       },
       "targets": [
-        { "expr": "cti_runs_success", "refId": "A" },
-        { "expr": "cti_runs_failure", "refId": "B" }
+        {
+          "expr": "cti_runs_success",
+          "refId": "A"
+        },
+        {
+          "expr": "cti_runs_failure",
+          "refId": "B"
+        }
       ],
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
         "orientation": "horizontal",
         "textMode": "auto",
         "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "auto"
       },
-      "gridPos": { "h": 4, "w": 8, "x": 16, "y": 0 }
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      }
     },
     {
       "id": 6,
@@ -133,13 +210,28 @@
         "uid": "PBFA97CFB590B2093"
       },
       "targets": [
-        { "expr": "cti_fetch_status_total", "legendFormat": "{{status}}", "refId": "A" }
+        {
+          "expr": "cti_fetch_status_total",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
       ],
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
       "options": {
         "displayMode": "gradient",
         "orientation": "horizontal",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
         "showUnfilled": true
       }
     },
@@ -152,13 +244,28 @@
         "uid": "PBFA97CFB590B2093"
       },
       "targets": [
-        { "expr": "cti_fetch_reason_total", "legendFormat": "{{reason}}", "refId": "A" }
+        {
+          "expr": "cti_fetch_reason_total",
+          "legendFormat": "{{reason}}",
+          "refId": "A"
+        }
       ],
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
       "options": {
         "displayMode": "gradient",
         "orientation": "horizontal",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
         "showUnfilled": true
       }
     },
@@ -171,11 +278,25 @@
         "uid": "PBFA97CFB590B2093"
       },
       "targets": [
-        { "expr": "cti_fetch_status_total{status=\"skipped-quota\"}", "refId": "A" }
+        {
+          "expr": "cti_fetch_status_total{status=\"skipped-quota\"}",
+          "refId": "A"
+        }
       ],
-      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 12 },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 12
+      },
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
         "orientation": "auto",
         "textMode": "auto"
       }
@@ -189,9 +310,18 @@
         "uid": "PBFA97CFB590B2093"
       },
       "targets": [
-        { "expr": "topk(5, cti_fetch_reason_total)", "legendFormat": "{{reason}}", "refId": "A" }
+        {
+          "expr": "topk(5, cti_fetch_reason_total)",
+          "legendFormat": "{{reason}}",
+          "refId": "A"
+        }
       ],
-      "gridPos": { "h": 4, "w": 10, "x": 4, "y": 12 },
+      "gridPos": {
+        "h": 4,
+        "w": 10,
+        "x": 4,
+        "y": 12
+      },
       "options": {
         "showHeader": true
       }
@@ -199,17 +329,103 @@
     {
       "id": 10,
       "type": "table",
-      "title": "Statuts (détail)",
+      "title": "Statuts (d\u00e9tail)",
       "datasource": {
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
       "targets": [
-        { "expr": "cti_fetch_status_total", "legendFormat": "{{status}}", "refId": "A" }
+        {
+          "expr": "cti_fetch_status_total",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
       ],
-      "gridPos": { "h": 4, "w": 10, "x": 14, "y": 12 },
+      "gridPos": {
+        "h": 4,
+        "w": 10,
+        "x": 14,
+        "y": 12
+      },
       "options": {
         "showHeader": true
+      }
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Last Run Status",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "targets": [
+        {
+          "expr": "cti_last_run_success",
+          "refId": "A"
+        },
+        {
+          "expr": "cti_last_run_failure",
+          "refId": "B"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "horizontal",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      }
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Last Run Duration (s)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "targets": [
+        {
+          "expr": "cti_last_run_duration_seconds",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
       }
     }
   ],

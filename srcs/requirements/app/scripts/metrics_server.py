@@ -38,6 +38,16 @@ class MetricsHandler(BaseHTTPRequestHandler):
                 f"cti_runs_success {s['runs_success']}",
                 f"cti_runs_failure {s['runs_failure']}",
             ]
+            last_status = s.get("last_run_status")
+            if last_status:
+                lines.append(f"cti_last_run_success {1 if last_status == 'ok' else 0}")
+                lines.append(f"cti_last_run_failure {1 if last_status != 'ok' else 0}")
+            last_duration = s.get("last_run_duration")
+            if last_duration is not None:
+                lines.append(f"cti_last_run_duration_seconds {float(last_duration):.4f}")
+            last_run_at = s.get("last_run_at")
+            if last_run_at is not None:
+                lines.append(f"cti_last_run_timestamp {float(last_run_at):.0f}")
             for reason, count in (s.get("fetch_reasons", {}) or {}).items():
                 lines.append(f'cti_fetch_reason_total{{reason="{reason}"}} {count}')
             for status, count in (s.get("fetch_per_status", {}) or {}).items():
