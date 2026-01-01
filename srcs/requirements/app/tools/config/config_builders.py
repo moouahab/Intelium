@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Optional, Set
 
-from tools.download_types import NetworkPolicy
+from tools.providers.http.download_types import NetworkPolicy
 from tools.config.config_utils import to_int, to_bool
 
 

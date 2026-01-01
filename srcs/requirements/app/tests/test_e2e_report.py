@@ -2,7 +2,7 @@ import importlib
 from pathlib import Path
 
 from tools.cache import CacheManager
-from tools.download_types import DownloadResult
+from tools.providers.http.download_types import DownloadResult
 
 
 def test_e2e_scrape_to_report(tmp_path, dummy_config_model):

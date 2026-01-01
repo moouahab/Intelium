@@ -1,7 +1,7 @@
 import importlib
 from concurrent.futures import ThreadPoolExecutor
 
-from tools.download_types import NetworkPolicy, DownloadResult
+from tools.providers.http.download_types import NetworkPolicy, DownloadResult
 
 
 def test_http_client_blocks_when_robots_forbid(monkeypatch):
@@ -163,7 +163,7 @@ def test_http_client_headless_shortcuts_download(monkeypatch):
 
 def test_http_client_enforces_max_bytes_stream(monkeypatch):
     client_module = importlib.import_module("tools.providers.http.client")
-    download_module = importlib.import_module("tools.download")
+    download_module = importlib.import_module("tools.providers.http.download")
 
     class FakeResponse:
         def __init__(self, content: bytes, ctype="text/plain"):

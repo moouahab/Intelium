@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
 
-from tools.download_types import NetworkPolicy
+from tools.providers.http.download_types import NetworkPolicy
 from tools.auth import build_headers
 from tools.providers.http.policies import policy_with_overrides, RobotsDelayPolicy
 from tools.config.overrides import normalize_overrides, merge_headers

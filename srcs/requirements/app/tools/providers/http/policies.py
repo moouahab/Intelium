@@ -2,7 +2,7 @@ import time
 import threading
 import urllib.robotparser
 from urllib.parse import urlparse
-from tools.download_types import NetworkPolicy
+from tools.providers.http.download_types import NetworkPolicy
 from tools.config.config_utils import to_int
 
 

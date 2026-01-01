@@ -3,8 +3,8 @@ import time
 import threading
 from contextlib import contextmanager
 
-from tools.download import download_with_context
-from tools.download_types import DownloadResult, NetworkPolicy, StorageTarget
+from tools.providers.http.download import download_with_context
+from tools.providers.http.download_types import DownloadResult, NetworkPolicy, StorageTarget
 from tools.providers.http.network import validate_url
 from tools.providers.http.policies import RobotsDelayPolicy
 from tools.providers.http.request_context import build_request_context

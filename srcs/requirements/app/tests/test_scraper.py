@@ -1,7 +1,7 @@
 import importlib
 
 from tools.cache import CacheManager, CacheEntry
-from tools.download_types import DownloadResult
+from tools.providers.http.download_types import DownloadResult
 
 
 def test_scraper_download_and_cache(dummy_config_model, fake_client_factory, tmp_path):

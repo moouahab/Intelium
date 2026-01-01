@@ -1,6 +1,6 @@
 from pathlib import Path
 import pytest
-from tools.download_types import NetworkPolicy, StorageTarget, DownloadResult
+from tools.providers.http.download_types import NetworkPolicy, StorageTarget, DownloadResult
 
 
 class DummyConfigModel:

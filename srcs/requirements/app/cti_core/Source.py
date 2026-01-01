@@ -2,8 +2,8 @@ from typing import Any, Dict, Optional
 from pathlib import Path
 import hashlib
 from tools.crypter import compute_sha256_from_text
-from tools.download import download_source
-from tools.download_types import DownloadResult, NetworkPolicy, StorageTarget
+from tools.providers.http.download import download_source
+from tools.providers.http.download_types import DownloadResult, NetworkPolicy, StorageTarget
 from tools.config.overrides import normalize_overrides
 
 

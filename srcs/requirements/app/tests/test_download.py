@@ -1,6 +1,6 @@
 import pytest
-from tools import download
-from tools.download import NetworkPolicy, StorageTarget
+from tools.providers.http import download
+from tools.providers.http.download import NetworkPolicy, StorageTarget
 
 
 class FakeResponse:

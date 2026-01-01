@@ -1,7 +1,7 @@
 import hashlib
 import importlib
 from pathlib import Path
-from tools.download import NetworkPolicy, StorageTarget
+from tools.providers.http.download import NetworkPolicy, StorageTarget
 
 
 def _get_source_module():

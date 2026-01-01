@@ -9,7 +9,7 @@ from tools.config.load_config import (
 )
 from tools.config.config_builders import build_network_policy, build_crawler_settings, build_http_client_settings
 from .Source import Source
-from tools.download_types import StorageTarget
+from tools.providers.http.download_types import StorageTarget
 from tools.auth import load_auth
 from tools.config.validators import validate_auth, validate_crawler, validate_output
 from tools.config.config_validator import validate_config

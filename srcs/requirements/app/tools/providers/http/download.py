@@ -4,7 +4,7 @@ import mimetypes
 import tempfile
 import subprocess
 
-from tools.download_types import DownloadResult, NetworkPolicy, StorageTarget
+from tools.providers.http.download_types import DownloadResult, NetworkPolicy, StorageTarget
 from tools.providers.http import network
 from tools.parsers.text_utils import ensure_text
 from tools.providers.http.request_context import RequestContext

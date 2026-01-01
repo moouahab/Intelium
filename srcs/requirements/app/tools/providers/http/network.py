@@ -2,7 +2,7 @@ import ipaddress
 import socket
 from urllib.parse import urlparse
 import requests
-from tools.download_types import NetworkPolicy
+from tools.providers.http.download_types import NetworkPolicy
 
 
 def resolve_host_ips(host: str) -> list[str]:
