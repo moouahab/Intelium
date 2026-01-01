@@ -21,7 +21,7 @@ def detect_local_llm() -> Optional[str]:
     Priorité : ollama -> llama/llama.cpp -> codex -> copilot -> code.
     """
     if shutil.which("ollama"):
-        return "ollama run llama3"
+        return "ollama run llama3.1:8b"
     if shutil.which("llama"):
         return "llama -m model.gguf"
     if shutil.which("llama.cpp"):

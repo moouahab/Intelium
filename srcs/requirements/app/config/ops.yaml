@@ -1,0 +1,5 @@
+ops:
+  strict_env: true
+  require_auth_env: true
+  require_alerting_env: false
+  required_env: []

@@ -2,6 +2,8 @@ import json
 import sys
 from typing import List, Dict, Any
 
+from tools.result_entry import normalize_results
+
 
 def render_progress(idx: int, total: int, name: str, status: str = ""):
     width = 30
@@ -12,7 +14,7 @@ def render_progress(idx: int, total: int, name: str, status: str = ""):
 
 
 def print_summary(results: List[Dict[str, Any]], report_path: str | None = None):
-    summary = {"sources": results}
+    summary = {"sources": normalize_results(results)}
     if report_path:
         summary["report"] = report_path
     print(json.dumps(summary, ensure_ascii=False, indent=2))

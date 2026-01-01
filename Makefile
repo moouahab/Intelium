@@ -1,6 +1,6 @@
 APP_DIR := srcs/requirements/app
 MAKE_APP := $(MAKE) -C $(APP_DIR)
-COMPOSE := docker compose -f srcs/docker-compose.yml
+COMPOSE := docker compose --env-file .env -f srcs/docker-compose.yml
 
 .PHONY: help deps test build run stop logs restart clean fclean re
 

@@ -3,5 +3,3 @@ authentication:
   hosts:
     otx.alienvault.com:
       X-OTX-API-KEY: "${OTX_API_KEY}"    # injecté depuis l'environnement
-    www.cisa.gov:
-      Authorization: "Bearer ${CISA_TOKEN}"

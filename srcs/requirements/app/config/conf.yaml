@@ -2,6 +2,7 @@
 keywords: data/keyword.json
 
 include:
+  - ops.yaml
   - sources.yaml
   - scraping.yaml
   - prompt.yaml

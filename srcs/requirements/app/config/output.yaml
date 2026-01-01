@@ -17,11 +17,11 @@ output:
     pass_prompt_as_arg: false
     prompt_via_file: true
     # Limites pour éviter les prompts trop volumineux (ajustables si besoin)
-    max_results: 18
-    max_extracted_per_source: 18
-    max_extracted_chars: 800
+    max_results: 12
+    max_extracted_per_source: 12
+    max_extracted_chars: 500
     fallback:
-      command: "python3 scripts/mistral_llm.py --model mistral-small-latest --max-tokens 4096"
+      command: "python3 scripts/ollama_llm.py"
       timeout: 260
       pass_prompt_as_arg: false
       prompt_via_file: true

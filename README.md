@@ -32,6 +32,13 @@ Ce dépôt orchestre un agent CTI capable de collecter des sources (CERT/RSS/API
 - `make restart` : restart scraper + métriques.
 - `make init-vault` : initialise/unseal Vault via `srcs/requirements/vault/scripts/init_vault.sh`.
 
+## Préparer l’environnement (.env)
+```bash
+cp .env.example .env
+# puis compléter les valeurs réelles (MISTRAL_API_KEY, MONGO_URI, SLACK_WEBHOOK_URL, SMTP_*)
+```
+Le `Makefile` lance `docker compose` avec `--env-file .env` pour garantir l’injection des variables.
+
 ## Usage rapide (hors Docker)
 ```bash
 cd srcs/requirements/app
@@ -46,6 +53,7 @@ python3 -m pytest -q                                # tests
 - `crawler.yaml` : profondeur/pages max, respect robots, délai crawl, same_domain_only.
 - `scraping.yaml` : règles de parsing par type (tags HTML, JSONPath API, tags XML, OCR/PDF).
 - `output.yaml` : rapport Markdown/JSON, split par source, options IA (commande, timeout, prompt).
+- `ops.yaml` : pré‑checks d’environnement (strict_env, alerting vars, secrets requis).
 - `auth.yaml` : headers globaux + par host, valeurs injectables via env (`${ENV_VAR}`).
 - `prompt.yaml` : templates de prompt IA réutilisables.
 - `cache.yaml` : backend fichier ou Mongo. Avec `backend: mongo` + `MONGO_URI`, le cache et les résultats (extraits/keywords/saved_path, y compris issus du cache) sont persistés dans Mongo.
@@ -54,6 +62,8 @@ python3 -m pytest -q                                # tests
 - Script conseillé : `python scripts/mistral_llm.py` (clé `MISTRAL_API_KEY`, modèle `MISTRAL_MODEL`).
 - `output.ai_report.enabled: true` pour activer la synthèse IA. Le prompt peut venir de `output.ai_report.prompt_template` ou `prompt_path`.
 - Fallback LangGraph (local) possible via `mode: langgraph` si configuré.
+- Fallback local rapide/gratuit : `scripts/ollama_llm.py` (Ollama). Configure `OLLAMA_MODEL` dans `.env` (ex: `llama3.2:3b` pour vitesse) et ajuste `OLLAMA_NUM_CTX`/`OLLAMA_NUM_PREDICT` pour limiter la latence.
+- En Docker, renseigne aussi `OLLAMA_HOST=http://host.docker.internal:11434` (ou l’URL de ton service Ollama) pour que le conteneur accède à Ollama.
 
 ## Parseurs et options
 - HTML : tags/CSS/XPath, `include_attributes`, sanitation optionnelle.
@@ -67,8 +77,8 @@ python3 -m pytest -q                                # tests
 
 ## Observabilité et stockage
 - Métriques exposées par `scripts/metrics_server.py` (Prometheus scrappé via `srcs/prometheus.yml`).
-- Grafana (port 3000, admin/admin par défaut à changer). Prometheus charge les règles d’alerte depuis `srcs/prometheus_rules.yml` (ex : taux d’échec fetch/run, endpoint métriques down, quota atteint) et envoie vers Alertmanager (`srcs/alertmanager.yml`).
-- Alertmanager (port 9093) : configure `SLACK_WEBHOOK_URL` (ou SMTP via variables) dans `.env`. La configuration `srcs/alertmanager.yml` référence ces variables ; gardez au moins des valeurs factices (ex : `https://example.invalid/webhook`) pour éviter une URL vide.
+- Grafana (port 3000, admin/admin par défaut à changer). Prometheus charge les règles d’alerte depuis `srcs/prometheus_rules.yml` (ex : taux d’échec fetch/run, endpoint métriques down, quota atteint) et envoie vers Alertmanager.
+- Alertmanager (port 9093) : configuration injectée via `srcs/docker-compose.yml` (bloc `configs`) avec les variables `${...}`. Assure‑toi que `SLACK_WEBHOOK_URL` et les variables SMTP ne sont pas vides, sinon Alertmanager refuse la config.
 - Dashboard “CTI - Overview” inclut un bloc santé (quota, top raisons, statuts). Les alertes exploitent les labels `severity` définis dans `prometheus_rules.yml` (warning/critical/info).
 - Mongo optionnel pour cache + résultats : définir `MONGO_URI` (env/Vault) et laisser `backend: mongo` dans `config/cache.yaml`.
 - Logs/rapports écrits sous `srcs/requirements/app/logs/` et `.../reports/` (ignorés par Git).

@@ -4,13 +4,18 @@ from tools.report_writer import ReportWriter
 from tools.scorer import score_results
 from tools.ioc_extractor import extract_iocs
 from tools.interfaces import Reporter
+from tools.result_entry import normalize_results
 import csv
 import json as _json
 
 
 def write_report(results: List[Dict[str, Any]], output_conf: dict, reporter: Reporter | None = None) -> Path:
+    results = normalize_results(results)
     reporter = reporter or ReportWriter(output_conf)
-    main_path = reporter.write(results)
+    try:
+        main_path = reporter.write(results, output_conf)
+    except TypeError:
+        main_path = reporter.write(results)
     try:
         export_additional_views(results, output_conf, main_path)
     except Exception:

@@ -28,6 +28,7 @@ def summary(payload: dict) -> dict:
     failure = fetch.get("failure", 0)
     reasons = fetch.get("reasons", {}) or {}
     per_status = fetch.get("per_status", {}) or {}
+    recent_errors = fetch.get("recent_errors", []) or []
     bytes_total = int(fetch.get("bytes_total", 0))
     duration_sum = float(fetch.get("duration_sum", 0.0))
     avg_duration = (duration_sum / total) if total else 0.0
@@ -41,6 +42,7 @@ def summary(payload: dict) -> dict:
         "fetch_reasons": reasons,
         "fetch_per_status": per_status,
         "fetch_bytes_total": bytes_total,
+        "fetch_recent_errors": recent_errors[-10:],
         "runs_total": counters.get("total", 0),
         "runs_success": counters.get("success", 0),
         "runs_failure": counters.get("failure", 0),

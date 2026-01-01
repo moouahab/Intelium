@@ -5,12 +5,27 @@ from typing import Any, Dict, List
 MAX_SNIPPET_LEN = 300
 
 
+_STATUS_LABELS = {
+    "skipped-cache": "cache-only",
+    "offline": "offline (cache-only)",
+    "skipped-quota": "quota atteint",
+}
+
+
 def _truncate(text: str, max_len: int = MAX_SNIPPET_LEN) -> str:
     if not isinstance(text, str):
         return text
     if len(text) <= max_len:
         return text
     return text[: max_len - 3] + "..."
+
+
+def format_status(status: str | None) -> str:
+    status = status or "unknown"
+    if status == "skipped-cache":
+        return f"{_STATUS_LABELS[status]} ({status})"
+    label = _STATUS_LABELS.get(status)
+    return label or status
 
 
 def build_markdown_section(
@@ -22,7 +37,7 @@ def build_markdown_section(
 ) -> List[str]:
     lines = [f"{heading_prefix} {res.get('name') or res.get('url')}"]
     lines.append(f"- Type : {res.get('type')}")
-    lines.append(f"- Statut : {res.get('status')}")
+    lines.append(f"- Statut : {format_status(res.get('status'))}")
     if res.get("error"):
         lines.append(f"- Erreur : {res.get('error')}")
     if res.get("saved_path"):

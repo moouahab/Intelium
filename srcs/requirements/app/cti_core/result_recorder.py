@@ -1,8 +1,8 @@
 import threading
-from typing import Any
-from tools.cache import CacheManager, CacheRegistry
+from tools.interfaces import CacheBackend
 from cti_core.Source import Source
-from tools.storage_mongo import save_result
+from tools.result_store import build_result_store, ResultStore
+from tools.result_entry import ResultEntry
 from tools.scorer import compute_confidence
 
 
@@ -11,9 +11,15 @@ class ResultRecorder:
     Centralise l'écriture thread-safe des résultats et du cache.
     """
 
-    def __init__(self, cache: CacheManager | CacheRegistry, results_store: list[dict[str, Any]]):
+    def __init__(
+        self,
+        cache: CacheBackend,
+        results_store: list[ResultEntry],
+        result_store: ResultStore | None = None,
+    ):
         self.cache = cache
         self.results = results_store
+        self.result_store = result_store or build_result_store()
         self._lock = threading.Lock()
 
     def record_cache_hit(self, source: Source, cached_entry, extracted=None, keyword_hits=None) -> None:
@@ -27,26 +33,21 @@ class ResultRecorder:
                 error=None,
                 saved_path=cached_entry.saved_path,
             )
-            self.results.append(
-                {
-                    "url": source.url,
-                    "name": source.name,
-                    "type": source.type,
-                    "status": "skipped-cache",
-                    "error": None,
-                    "saved_path": cached_entry.saved_path,
-                    "extracted": extracted or [],
-                    "confidence": compute_confidence(
-                        {"status": "skipped-cache", "extracted": extracted or [], "keywords": keyword_hits or {}}
-                    ),
-                    **({"keywords": keyword_hits} if keyword_hits else {}),
-                }
+            record = ResultEntry(
+                url=source.url,
+                name=source.name,
+                type=source.type,
+                status="skipped-cache",
+                error=None,
+                saved_path=cached_entry.saved_path,
+                extracted=extracted or [],
+                keywords=keyword_hits or None,
+                confidence=compute_confidence(
+                    {"status": "skipped-cache", "extracted": extracted or [], "keywords": keyword_hits or {}}
+                ),
             )
-            record = self.results[-1]
-            try:
-                save_result(record)
-            except Exception:
-                pass
+            self.results.append(record)
+            self.result_store.save(record.to_dict())
 
     def record_result(self, source: Source, result, extracted, keyword_hits: dict | None = None) -> None:
         with self._lock:
@@ -63,23 +64,19 @@ class ResultRecorder:
                 extracted=extracted,
                 keywords=keyword_hits,
             )
-            record = {
-                "url": source.url,
-                "name": source.name,
-                "type": source.type,
-                "status": result.status,
-                "error": result.error,
-                "saved_path": saved_path,
-                "extracted": extracted,
-                "confidence": conf,
-            }
-            if keyword_hits:
-                record["keywords"] = keyword_hits
+            record = ResultEntry(
+                url=source.url,
+                name=source.name,
+                type=source.type,
+                status=result.status,
+                error=result.error,
+                saved_path=saved_path,
+                extracted=extracted,
+                keywords=keyword_hits or None,
+                confidence=conf,
+            )
             self.results.append(record)
-            try:
-                save_result(record)
-            except Exception:
-                pass
+            self.result_store.save(record.to_dict())
 
     def check_or_record_cache_hit(self, url: str, source_type: str, name: str) -> bool:
         """Deprecated: use record_cache_hit with a Source object."""

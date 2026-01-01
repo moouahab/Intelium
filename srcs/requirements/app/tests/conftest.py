@@ -80,6 +80,20 @@ def dummy_config_model(tmp_path):
 
 
 @pytest.fixture
+def minimal_config():
+    return {
+        "ops": {
+            "strict_env": True,
+            "require_auth_env": True,
+            "require_alerting_env": False,
+            "required_env": [],
+        },
+        "cache": {"backend": "mongo"},
+        "output": {"ai_report": {"enabled": True, "command": "python3 scripts/mistral_llm.py"}},
+    }
+
+
+@pytest.fixture
 def fake_client_factory():
     """
     Fabrique un faux client HTTP basé sur une table url->content.
@@ -90,14 +104,11 @@ def fake_client_factory():
         class FakeClient:
             def __init__(self):
                 self.calls = []
-
             def fetch(self, source, storage=None):
                 url = source.get("url")
                 self.calls.append(url)
                 content = content_map.get(url, "")
                 saved = storage.base_dir / "file" if storage else None
                 return DownloadResult(status="downloaded", content=content, content_type=content_type, saved_path=saved)
-
         return FakeClient()
-
     return _build

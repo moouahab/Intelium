@@ -37,3 +37,10 @@ jobs:
         env:
           PYTHONPATH: .
         run: python -m pytest -q
+
+      - name: Ensure .env is not committed
+        run: |
+          if git ls-files -z | tr '\0' '\n' | grep -qx '.env'; then
+            echo "ERROR: .env is committed. Remove it from the repo."
+            exit 1
+          fi

@@ -11,6 +11,7 @@ from tools.http.request_context import build_request_context
 from tools.logger_utils import mask_sensitive_headers
 from tools.http.headless import fetch_headless, HeadlessStrategy, get_default_headless_strategy
 from tools.metrics import record_fetch
+from urllib.parse import urlparse, urlunparse
 
 
 class HttpClient:
@@ -118,6 +119,12 @@ class HttpClient:
                 self._robots_delay.wait(url, delay_override=ctx.crawl_delay)
                 result = download_with_context(source, ctx=ctx, storage=storage)
                 if self.metrics_path:
+                    safe_url = None
+                    try:
+                        parsed = urlparse(url or "")
+                        safe_url = urlunparse(parsed._replace(query="", fragment=""))
+                    except Exception:
+                        safe_url = url
                     reason = None
                     if result.status == "blocked-robots":
                         reason = "blocked-robots"
@@ -129,7 +136,20 @@ class HttpClient:
                         reason = (result.error[:80] if isinstance(result.error, str) else str(result.error)) or result.status
                     else:
                         reason = result.status
-                    record_fetch(self.metrics_path, elapsed(), result.status, reason=reason, size_bytes=result.size_bytes)
+                    record_fetch(
+                        self.metrics_path,
+                        elapsed(),
+                        result.status,
+                        reason=reason,
+                        size_bytes=result.size_bytes,
+                        source_name=source.get("name"),
+                        url=safe_url,
+                    )
+                    if self.logger and result.status != "downloaded":
+                        try:
+                            self.logger.warning("HTTP fetch KO %s status=%s reason=%s", safe_url, result.status, reason)
+                        except Exception:
+                            pass
                 if not self._should_retry(result, attempt):
                     return result
                 attempt += 1

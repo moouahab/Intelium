@@ -4,12 +4,14 @@ from cti_core.config_model import ConfigModel
 from cti_core.scraper import Scraper
 from tools.load_config import get_config_as_json_string
 from tools.cache_factory import build_cache
-from tools.cache import CacheManager, CacheRegistry
+from tools.interfaces import CacheBackend
 from tools.logger_utils import setup_logger, log_structured
 from tools.report import write_report
 from cti_core.cli import render_progress, print_summary
 from tools.ai_report import generate_ai_report
 from urllib.parse import urlparse
+from tools.preflight import check_env_requirements
+from tools.result_entry import normalize_results
 
 
 def _validate_allowlist(config_model: ConfigModel, logger) -> bool:
@@ -30,7 +32,7 @@ def _validate_allowlist(config_model: ConfigModel, logger) -> bool:
     return True
 
 
-def build_cache_manager(cache_conf: dict) -> CacheManager | CacheRegistry:
+def build_cache_manager(cache_conf: dict) -> CacheBackend:
     return build_cache(cache_conf)
 
 
@@ -54,6 +56,9 @@ def run(config_path: str = "config/conf.yaml", force_ai_report: bool | None = No
         log_structured(logger, logging.ERROR, "config_errors", errors=config_model.errors)
         logger.error("Arrêt du run : configuration invalide.")
         return
+    if not check_env_requirements(config_model.yaml_config, config_model.auth_settings, logger=logger):
+        logger.error("Arrêt du run : variables d'environnement manquantes.")
+        return
     if not _validate_allowlist(config_model, logger):
         logger.error("Arrêt du run : allowlist non respectée.")
         return
@@ -70,6 +75,7 @@ def run(config_path: str = "config/conf.yaml", force_ai_report: bool | None = No
     render_progress(0, total_sources, "initialisation", "")
     scraper = Scraper(config_model, cache_manager)
     results = scraper.run()
+    results_payload = normalize_results(results)
     render_progress(total_sources, total_sources, "terminé", "")
     print()  # fin de barre
     # Rapport et résumé JSON
@@ -80,8 +86,8 @@ def run(config_path: str = "config/conf.yaml", force_ai_report: bool | None = No
         ai_conf = dict(output_conf.get("ai_report", {}))
         ai_conf["enabled"] = force_ai_report
         output_conf["ai_report"] = ai_conf
-    report_path = write_report(results, output_conf)
+    report_path = write_report(results_payload, output_conf)
     # Rapport IA optionnel
     ai_conf = output_conf.get("ai_report", {})
-    generate_ai_report(results, ai_conf, logger=logger)
-    print_summary(results, report_path=str(report_path))
+    generate_ai_report(results_payload, ai_conf, logger=logger)
+    print_summary(results_payload, report_path=str(report_path))

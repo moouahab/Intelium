@@ -5,25 +5,31 @@ from .Source import Source
 from .crawler_state import CrawlerState
 from cti_core.sources_factory import enqueue_links
 from cti_core.result_recorder import ResultRecorder
-from tools.cache import CacheManager
+from tools.interfaces import CacheBackend
 from tools.download_types import NetworkPolicy
-from tools.http.url_utils import normalize_url, same_domain
-import tools.parser as parser
-from tools.keywords import find_keyword_hits
-from tools.http.client import HttpClient
+from tools.http.url_utils import same_domain
+from tools.extractor import Extractor
+from tools.fetchers import build_fetcher
 from tools.http.url_policy import UrlPolicy
 from tools.parsers.text_utils import ensure_text
 from tools.interfaces import GenericFetcher
 from tools.quota import Quota
 from tools.download_types import DownloadResult
+from tools.result_entry import ResultEntry
 from pathlib import Path
 
 
 class Scraper:
-    def __init__(self, config_model, cache_manager: CacheManager, http_client: GenericFetcher | None = None):
+    def __init__(
+        self,
+        config_model,
+        cache_manager: CacheBackend,
+        http_client: GenericFetcher | None = None,
+        extractor: Extractor | None = None,
+    ):
         self.config_model = config_model
         self.cache = cache_manager
-        self.results = []
+        self.results: list[ResultEntry] = []
         self.policy: NetworkPolicy = config_model.network_policy
         crawler_conf = config_model.crawler_settings
         self.max_depth = crawler_conf.get("max_depth", 2)
@@ -35,24 +41,14 @@ class Scraper:
             max_pages=crawler_conf.get("global_max_pages"),
             max_bytes=crawler_conf.get("global_max_bytes"),
         )
-        http_settings = getattr(config_model, "http_settings", {}) or {}
         self.url_policy = UrlPolicy(
             same_domain_only=self.same_domain_only,
             allow_domains=self.allow_domains or None,
             normalizer_name=crawler_conf.get("url_normalizer", "strip"),
         )
-        self.http_client = http_client or HttpClient(
-            policy=self.policy,
-            auth_conf=getattr(config_model, "auth_settings", {}),
-            respect_robots=bool(http_settings.get("respect_robots", crawler_conf.get("respect_robots", True))),
-            crawl_delay=int(http_settings.get("crawl_delay_seconds", crawler_conf.get("crawl_delay_seconds", 0))),
-            retries=int(http_settings.get("retry_attempts", 2)),
-            backoff_seconds=float(http_settings.get("retry_backoff_seconds", 0.5)),
-            user_agent=http_settings.get("user_agent") or crawler_conf.get("user_agent"),
-            user_agents=getattr(config_model, "user_agents", []),
-            proxies=getattr(config_model, "proxies", []),
-        )
+        self.fetcher = build_fetcher(config_model, http_client=http_client)
         self.recorder = ResultRecorder(self.cache, self.results)
+        self.extractor = extractor or Extractor(self.config_model.scraping_settings, getattr(self.config_model, "keywords", {}))
 
     def _normalize_url(self, url: str) -> str:
         return self.url_policy.normalize(url)
@@ -67,7 +63,7 @@ class Scraper:
         if overrides:
             source_dict["overrides"] = overrides
 
-        result = self.http_client.fetch(
+        result = self.fetcher.fetch(
             source_dict,
             storage=storage,
         )
@@ -80,18 +76,7 @@ class Scraper:
         extracted: list[str] = []
         keyword_hits: dict = {}
         if result.status == "downloaded":
-            extracted = parser.parse_content(
-                current.type,
-                current.content,
-                self.config_model.scraping_settings,
-                source_name=current.name,
-            )
-            texts_for_match = list(extracted)
-            raw = result.content
-            raw_text = ensure_text(raw) if raw is not None else ""
-            if raw_text:
-                texts_for_match.append(raw_text)
-            keyword_hits = find_keyword_hits(texts_for_match, getattr(self.config_model, "keywords", {}))
+            extracted, keyword_hits = self.extractor.extract(current.type, current.content, source_name=current.name)
         return result, extracted, keyword_hits
 
     def _parse_cached(self, current: Source, cached_entry):
@@ -110,18 +95,7 @@ class Scraper:
         raw_content = raw_bytes
         if current.type in {"html", "api", "xml", "csv", "txt"}:
             raw_content = ensure_text(raw_bytes)
-        extracted = parser.parse_content(
-            current.type,
-            raw_content,
-            self.config_model.scraping_settings,
-            source_name=current.name,
-        )
-        texts_for_match = list(extracted)
-        try:
-            texts_for_match.append(ensure_text(raw_content))
-        except Exception:
-            pass
-        keyword_hits = find_keyword_hits(texts_for_match, getattr(self.config_model, "keywords", {}))
+        extracted, keyword_hits = self.extractor.extract(current.type, raw_content, source_name=current.name)
         return extracted, keyword_hits
 
     def _process_source(self, state: CrawlerState, current: Source, depth: int) -> None:
