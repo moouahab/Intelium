@@ -54,23 +54,32 @@ class Orchestrator:
             self.logger.info("Orchestrator run end (%s) duration=%.2fs", status, duration)
             self._running.release()
 
-    def serve_forever(self):
-        # gestion du premier lancement (start_time)
-        initial_delay = compute_initial_delay(self.schedule.start_time)
-        if initial_delay > 0:
-            self.logger.info("Waiting %ss before first run (start_time=%s)", initial_delay, self.schedule.start_time)
-            time.sleep(initial_delay)
-        while not self._stop.is_set():
-            self._run_once()
-            # attente avant prochaine exécution
-            sleep_for = self.schedule.interval_seconds
-            # pas de backoff intégré ici; on respecte intervalle fixe
-            for _ in range(int(sleep_for)):
-                if self._stop.is_set():
-                    break
-                time.sleep(1)
+    def _sleep_with_stop(self, seconds: int) -> None:
+        for _ in range(int(seconds)):
             if self._stop.is_set():
                 break
+            time.sleep(1)
+
+    def serve_forever(self):
+        first_run = True
+        while not self._stop.is_set():
+            if self.schedule.start_time:
+                delay = compute_initial_delay(self.schedule.start_time, timezone=self.schedule.timezone)
+                if delay > 0:
+                    self.logger.info(
+                        "Waiting %ss before run (start_time=%s, timezone=%s)",
+                        delay,
+                        self.schedule.start_time,
+                        self.schedule.timezone,
+                    )
+                    self._sleep_with_stop(delay)
+            elif not first_run:
+                self._sleep_with_stop(self.schedule.interval_seconds)
+
+            if self._stop.is_set():
+                break
+            self._run_once()
+            first_run = False
 
 
 def run_orchestrator(config_path: str, metrics_path: str = "data/health.json"):

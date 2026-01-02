@@ -55,6 +55,7 @@ Ce guide décrit quoi vérifier après un redémarrage et comment tester chaque 
 | Run bloque "Allowlist requise" | `ops.require_allowlist: true` et allowlist vide | Remplir `allow_domains` dans `config/network.yaml` |
 | Rapport “vide” | Sources bloquées (robots/cache) ou offline sans cache | Vérifier le statut “skipped-cache/offline”, relancer avec accès réseau |
 | Rapport “100% cache/seed” | Aucun download réseau | Vérifier allowlist/robots/proxy et la connectivité |
+| Email rapport non recu | SMTP non configure ou PDF non genere | Verifier `SMTP_*`, `ALERT_EMAIL_FROM`, `output.email_report` et presence de `reports/rapport.pdf` |
 | Métriques non visibles | Service metrics KO ou port non exposé | Vérifier `cti-metrics`, port `9000`, et que Prometheus pointe dessus |
 | Prometheus cible DOWN | Metrics pas joignable | Vérifier `cti-metrics`, réseau Docker, port `9000` |
 | Grafana sans données | Datasource Prometheus non OK | Vérifier datasource et URL `http://prometheus:9090` |

@@ -59,6 +59,17 @@
   - `analysis` : étape IA intermédiaire optionnelle (prompt dédié).
   - `scoring` : poids configurables (malware/vulnerability/attack_technique/default) + `per_type` (poids par type) et CVSS (seuils high/medium). Priorité “high” forcée si malware + CVE.
   - `filter.vulnerability_only` : filtre côté IA pour ne garder que les entrées vulnérabilité (keywords vulnérabilité ou CVE).
+- Email report (`email_report`) :
+  - `enabled` : active l'envoi du rapport par email.
+  - `to` / `from` : destinataires et expediteur (fallback sur `scheduling.notification_email` et `ALERT_EMAIL_FROM`).
+  - `subject` / `body` : templates avec `{date}`, `{datetime}`, `{run_id}`.
+  - `attach_pdf` / `pdf_path` : joint un PDF du rapport (genere via `fpdf2`).
+  - `pdf_source` : `summary` (par defaut) ou `report` pour choisir la source Markdown.
+  - `pdf_source_path` : chemin explicite si vous voulez une autre source Markdown.
+  - `pdf_style` : `basic` (rendu simple) ou `enterprise` (sommaire, pagination, tableaux styles).
+  - `pdf_regenerate` : regenere le PDF a chaque run (utile pour eviter les anciens fichiers).
+  - Style `enterprise` : demarre chaque section (titres `##`) sur une nouvelle page et convertit les tableaux Markdown en vrais tableaux PDF.
+  - SMTP : se base sur `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` via `.env`/Vault.
 - Logging : `config/logging.yaml` (niveau, fichier, rotation).
 
 ## Auth (`config/auth.yaml`)

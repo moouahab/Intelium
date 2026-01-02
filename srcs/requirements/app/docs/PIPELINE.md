@@ -35,6 +35,7 @@ Le fichier `.env` est lu par `env_file` dans compose (et `make run` passe `--env
 ## IA (Mistral) et rapport
 - Commande IA : `python scripts/mistral_llm.py` (clé `MISTRAL_API_KEY` requise).
 - Rapport IA et principal fusionnés dans `reports/rapport.md` (format markdown + export JSON).
+- Rapport PDF par email : activez `output.email_report.enabled` et configurez `SMTP_*` + `ALERT_EMAIL_FROM` dans `.env`.
 - Pour éviter les prompts trop gros : limites `max_results`, `max_extracted_per_source`, `max_extracted_chars` dans `config/output.yaml`.
 - Fallback local rapide/gratuit : `python scripts/ollama_llm.py` (Ollama). Configurer `OLLAMA_MODEL`/`OLLAMA_TIMEOUT`/`OLLAMA_RETRIES` et, pour la vitesse, `OLLAMA_NUM_CTX`/`OLLAMA_NUM_PREDICT` dans `.env`.
 - En Docker, ajouter `OLLAMA_HOST=http://host.docker.internal:11434` (ou l’URL de ton service Ollama).
@@ -46,6 +47,7 @@ Le fichier `.env` est lu par `env_file` dans compose (et `make run` passe `--env
 ## Observabilité
 - `metrics` → Prometheus (`srcs/prometheus.yml`), Grafana sur `http://localhost:3000`.
 - Alertes → Alertmanager (`http://localhost:9093`) avec Slack/SMTP si configuré.
+- Planification : `config/scheduling.yaml` (ex: `start_time: "20:00"` et `interval: 24h`). Si `start_time` est defini, chaque run est aligne sur cette heure (quotidien).
 - Fichier santé : `srcs/requirements/app/data/health.json`.
 - Logs : `srcs/requirements/app/logs/`.
 

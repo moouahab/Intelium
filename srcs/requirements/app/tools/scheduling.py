@@ -5,6 +5,10 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 from tools.config.config_utils import to_bool, to_int
+try:
+    from zoneinfo import ZoneInfo
+except Exception:  # pragma: no cover - fallback for older environments
+    ZoneInfo = None
 
 
 def parse_interval_seconds(value: Any, default: int = 3600) -> int:
@@ -58,19 +62,38 @@ def load_schedule_config(raw: dict | None) -> ScheduleConfig:
     )
 
 
-def compute_initial_delay(start_time: Optional[str], now: Optional[dt.datetime] = None) -> int:
+def _resolve_timezone(tz_name: Optional[str]) -> Optional[dt.tzinfo]:
+    if not tz_name or ZoneInfo is None:
+        return None
+    try:
+        return ZoneInfo(tz_name)
+    except Exception:
+        return None
+
+
+def compute_initial_delay(
+    start_time: Optional[str],
+    now: Optional[dt.datetime] = None,
+    timezone: Optional[str] = None,
+) -> int:
     """
     Retourne le délai (secondes) avant le premier run, en fonction de start_time HH:MM.
     Si start_time est passé, planifie pour le lendemain.
     """
     if not start_time:
         return 0
-    now = now or dt.datetime.now()
+    tzinfo = _resolve_timezone(timezone)
+    if now is None:
+        now = dt.datetime.now(tzinfo) if tzinfo else dt.datetime.now()
+    elif tzinfo and now.tzinfo is None:
+        now = now.replace(tzinfo=tzinfo)
+    elif tzinfo:
+        now = now.astimezone(tzinfo)
     try:
         hour, minute = [int(x) for x in start_time.split(":")]
         target = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
     except Exception:
         return 0
-    if target <= now:
+    if target < now:
         target = target + dt.timedelta(days=1)
     return int((target - now).total_seconds())

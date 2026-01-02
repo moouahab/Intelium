@@ -11,15 +11,20 @@ output:
     prompt_template: ""                # utilise le template de prompt.yaml (ajusté)
     prompt_path: config/prompt.yaml
     required_sections:
-      - "Résumé exécutif"
+      - "Résumé executif"
+      - "Priorites"
+      - "Vulnerabilites"
       - "IOCs"
-      - "Vulnérabilités"
+      - "Recommandations"
+    accept_incomplete: true
+    fill_missing_sections: true
+    restore_on_incomplete: false
     pass_prompt_as_arg: false
     prompt_via_file: true
     # Limites pour éviter les prompts trop volumineux (ajustables si besoin)
-    max_results: 12
-    max_extracted_per_source: 12
-    max_extracted_chars: 500
+    max_results: 20
+    max_extracted_per_source: 16
+    max_extracted_chars: 800
     fallback:
       command: "python3 scripts/ollama_llm.py"
       timeout: 260
@@ -37,6 +42,21 @@ output:
         medium_threshold: 7.0
     analysis:
       enabled: false  # désactivée pour éviter un second appel LLM ; active-la si nécessaire
+  email_report:
+    enabled: true
+    to: []                   # vide => fallback sur scheduling.notification_email ou ALERT_EMAIL_TO
+    from: ""                 # vide => ALERT_EMAIL_FROM
+    subject: "[CTI] Rapport quotidien {date}"
+    body: "Bonjour,\n\nVeuillez trouver le rapport CTI en piece jointe.\n"
+    attach_pdf: true
+    pdf_source: report       # summary => utilise reports/summary.md, report => utilise rapport.md
+    pdf_source_path: ""      # optionnel: chemin explicite du markdown a convertir
+    pdf_path: reports/rapport.pdf
+    pdf_style: enterprise    # basic ou enterprise (mise en page avec sommaire + tables)
+    pdf_regenerate: true     # regenere le PDF a chaque run pour eviter les fichiers obsoletes
+    smtp_ssl: false          # true si SMTP SSL direct (ex: port 465)
+    smtp_starttls: true
+    smtp_timeout: 30
   format: markdown
   additional_formats:
     - json

@@ -35,3 +35,29 @@ def test_generate_ai_report_sets_pass_prompt_as_arg_for_codex(monkeypatch, tmp_p
     assert out.read_text() == "OK FIN DU RAPPORT"
     assert captured["pass_prompt_as_arg"] is False
     assert captured["prompt_via_file"] is True
+
+
+def test_generate_ai_report_accepts_incomplete_and_fills_sections(monkeypatch, tmp_path):
+    def fake_run(cmd, prompt, timeout=120, pass_prompt_as_arg=False, prompt_via_file=False, **kwargs):
+        return "# Rapport CTI\nContenu partiel"
+
+    monkeypatch.setattr(ai_report, "_run_llm", fake_run)
+    out = tmp_path / "ai.md"
+    res = ai_report.generate_ai_report(
+        [{"url": "http://x"}],
+        {
+            "enabled": True,
+            "command": "echo ai",
+            "output": out,
+            "required_sections": ["Résumé executif", "Recommandations"],
+            "accept_incomplete": True,
+            "fill_missing_sections": True,
+        },
+        logger=None,
+    )
+
+    assert res == out
+    content = out.read_text()
+    assert "Résumé executif" in content
+    assert "Recommandations" in content
+    assert "FIN DU RAPPORT" in content

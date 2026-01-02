@@ -4,6 +4,7 @@ from copy import deepcopy
 from pathlib import Path
 import re
 import time
+import unicodedata
 from typing import Any, Dict, List, Optional, Callable
 
 from tools.providers.ai.prompt_config import PromptConfig
@@ -156,6 +157,12 @@ def _run_local_autodetect(
         return None
 
 
+def _normalize_text(text: str) -> str:
+    normalized = unicodedata.normalize("NFKD", text)
+    stripped = normalized.encode("ascii", "ignore").decode("ascii")
+    return stripped.lower()
+
+
 def is_complete(
     text: Optional[str],
     required_markers: Optional[list[str]] = None,
@@ -164,12 +171,12 @@ def is_complete(
     if not text:
         return False
     markers = required_markers or ["FIN DU RAPPORT"]
-    lowered = text.lower()
+    lowered = _normalize_text(text)
     for m in markers:
-        if m.lower() not in lowered:
+        if _normalize_text(m) not in lowered:
             return False
     for sec in required_sections or []:
-        if sec.lower() not in lowered:
+        if _normalize_text(sec) not in lowered:
             return False
     return True
 
@@ -202,6 +209,33 @@ def _truncate_text(text: Any, max_len: int) -> Any:
     if len(text) <= max_len:
         return text
     return text[: max_len - 3] + "..."
+
+
+def _fill_missing_sections(
+    text: str,
+    required_sections: list[str],
+    required_markers: list[str],
+) -> str:
+    if not text:
+        text = ""
+    normalized = _normalize_text(text)
+    lines: list[str] = []
+    for sec in required_sections:
+        if _normalize_text(sec) in normalized:
+            continue
+        lines.append(f"## {sec}")
+        lines.append("- Donnees absentes dans les extraits fournis.")
+        lines.append("")
+    if required_markers:
+        marker_norm = [_normalize_text(m) for m in required_markers]
+        combined = _normalize_text(text + "\n" + "\n".join(lines))
+        for marker, marker_n in zip(required_markers, marker_norm):
+            if marker_n not in combined:
+                lines.append(marker)
+    if lines:
+        prefix = "" if text.endswith("\n") or not text else "\n"
+        return text + prefix + "\n".join(lines).rstrip() + "\n"
+    return text
 
 
 def _compact_results(
@@ -340,10 +374,17 @@ class DefaultAIProvider(AIProvider):
         retry_delay = float(ai_conf.get("retry_delay", 0))
         required_markers = ["FIN DU RAPPORT"]
         required_sections = ai_conf.get("required_sections") or []
+        accept_incomplete = bool(ai_conf.get("accept_incomplete", False))
+        fill_missing = bool(ai_conf.get("fill_missing_sections", True))
+        last_text: Optional[str] = None
         text = _run_with_retries(self.run_llm, plan, prompt, output_path, retries, retry_delay, logger)
+        if text:
+            last_text = text
         if not is_complete(text, required_markers, required_sections):
             _log_warn(logger, "Rapport IA incomplet, tentative fallback", Exception("rapport incomplet"))
             text = _run_fallback(self.run_llm, ai_conf, prompt, output_path, logger)
+            if text:
+                last_text = text
         if not is_complete(text, required_markers, required_sections):
             text = _run_local_autodetect(
                 self.run_llm,
@@ -354,7 +395,14 @@ class DefaultAIProvider(AIProvider):
                 pass_prompt_as_arg=plan.pass_prompt_as_arg,
                 prompt_via_file=plan.prompt_via_file,
             )
+            if text:
+                last_text = text
         if not is_complete(text, required_markers, required_sections):
+            if accept_incomplete and last_text:
+                if fill_missing:
+                    last_text = _fill_missing_sections(last_text, required_sections, required_markers)
+                _write_text(output_path, last_text, logger, "Rapport IA (incomplet)")
+                return output_path
             if logger:
                 logger.warning("Rapport IA final incomplet : un résumé minimal sera écrit.")
             try:

@@ -12,6 +12,7 @@ from tools.providers.ai.providers import is_complete as ai_is_complete
 from tools.interfaces import CacheBackend
 from tools.providers.cache_factory import build_cache
 from tools.reporting.report import write_report
+from tools.reporting.email_report import send_report_email
 from tools.result_entry import ResultEntry, normalize_results
 from cti_core.pipeline_steps import enrich_results, score_results_payload
 
@@ -55,13 +56,14 @@ def run_report(results_payload: List[Dict[str, Any]], output_conf: dict, logger=
     ai_path = generate_ai_report(results_payload, ai_conf, logger=logger)
     if ai_conf.get("enabled") and ai_path:
         required_sections = ai_conf.get("required_sections") or []
+        restore_on_incomplete = bool(ai_conf.get("restore_on_incomplete", True))
         ai_output = Path(ai_conf.get("output") or ai_path)
         if base_text is not None and ai_output.resolve() == report_path.resolve():
             try:
                 text = ai_output.read_text()
             except Exception:
                 text = None
-            if not ai_is_complete(text, required_sections=required_sections):
+            if restore_on_incomplete and not ai_is_complete(text, required_sections=required_sections):
                 report_path.write_text(base_text)
                 if logger:
                     logger.warning("Rapport IA incomplet : rapport technique restauré.")
@@ -81,5 +83,16 @@ def run_pipeline(config_model, logger=None, force_ai_report: bool | None = None)
     scoring_conf = output_conf.get("scoring") or output_conf.get("ai_report", {}).get("scoring")
     results_payload = score_results_payload(results_payload, scoring_conf=scoring_conf)
     report_path = run_report(results_payload, output_conf, logger=logger)
+    try:
+        send_report_email(
+            report_path,
+            output_conf,
+            scheduling_conf=config_model.yaml_config.get("scheduling"),
+            run_meta=run_meta,
+            logger=logger,
+        )
+    except Exception as exc:
+        if logger:
+            logger.warning("Email rapport: echec d'envoi (%s).", exc)
     print_summary(results_payload, report_path=str(report_path))
     return results_payload, report_path

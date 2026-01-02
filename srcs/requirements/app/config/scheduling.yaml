@@ -1,6 +1,6 @@
 scheduling:
-  interval: 6h
-  start_time: ""   # vide => lancement immédiat puis intervalle régulier
+  interval: 24h
+  start_time: "20:00"   # heure locale (timezone)
   timezone: "Europe/Paris"
   retry_on_failure: true
   max_retries: 3

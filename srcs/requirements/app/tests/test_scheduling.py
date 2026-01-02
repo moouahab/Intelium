@@ -21,6 +21,18 @@ def test_compute_initial_delay_future_and_past():
     assert delay_next_day == 23 * 3600
 
 
+def test_compute_initial_delay_with_timezone_keeps_expected_gap():
+    now = dt.datetime(2024, 1, 1, 12, 0, 0)
+    delay = compute_initial_delay("13:00", now=now, timezone="Europe/Paris")
+    assert delay == 3600
+
+
+def test_compute_initial_delay_same_minute_is_zero():
+    now = dt.datetime(2024, 1, 1, 20, 0, 0)
+    delay = compute_initial_delay("20:00", now=now)
+    assert delay == 0
+
+
 def test_load_schedule_config_defaults():
     cfg = load_schedule_config(None)
     assert cfg.interval_seconds > 0
