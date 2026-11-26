@@ -71,7 +71,7 @@ def generate():
             lines += [f'- [`{d["qualified"]}`]({link}) — {role}',
                       f'  Appels effectués : {", ".join(d["operations"]) or "aucun appel explicite"}. Usages candidats : {len(d["candidate_usages"])}.']
         lines += ['']
-    (OUT / 'FUNCTIONS.md').write_text('\n'.join(lines) + '\n')
+    (OUT / 'FUNCTIONS.md').write_text('\n'.join(lines).rstrip() + '\n')
     print(f'{len(modules)} modules; {len(definitions)} definitions')
 
 

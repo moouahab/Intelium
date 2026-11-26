@@ -1868,4 +1868,3 @@ Les usages sont des candidats par nom, pas un graphe résolu. Les constructeurs,
 
 - [`get_secret`](../../srcs/requirements/app/tools/secrets.py#L18) — Rôle non documenté ; consulter les opérations et le corps de la fonction.
   Appels effectués : client.secrets.kv.v2.read_secret_version, data.get, hvac.Client, os.getenv, resp.get, resp.get('data', {}).get. Usages candidats : 10.
-

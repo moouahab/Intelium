@@ -1,5 +1,5 @@
 {
-  "commit": "b0d797d1ad30ca9e5918542f87ea89b6c0f664f2",
+  "commit": "19674295a76eb0499fe8d29f03c6c7ddfd88fe20",
   "scope": "Working tree, including non-ignored untracked Python files",
   "limitations": "Name matching only: aliases, callbacks and dynamic dispatch need manual verification. No candidate does not prove dead code.",
   "modules": [
