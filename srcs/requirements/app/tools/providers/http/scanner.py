@@ -10,13 +10,18 @@ from pathlib import Path
 from typing import Optional
 
 
-def run_scan(file_path: Path, command: str, timeout: int = 60) -> Optional[str]:
+def run_scan(file_path: Path, command: str, timeout: int = 60, scanner: Optional[str] = None) -> Optional[str]:
     if not command:
         return None
-    file_str = str(file_path)
-    cmd_str = command.replace("{file}", file_str)
-    cmd_list = shlex.split(cmd_str)
-    proc = subprocess.run(cmd_list, capture_output=True, text=True, timeout=timeout)
+    try:
+        cmd_list = [arg.replace("{file}", str(file_path)) for arg in shlex.split(command)]
+        if not cmd_list:
+            return "Commande de scan vide"
+        proc = subprocess.run(cmd_list, capture_output=True, text=True, timeout=timeout)
+    except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
+        return f"Scanner indisponible ou en échec: {exc}"
     if proc.returncode != 0:
         return proc.stderr.strip() or f"Scan failed (rc={proc.returncode})"
+    if (scanner == "yara" or Path(cmd_list[0]).name in {"yara", "yara.exe"}) and proc.stdout.strip():
+        return "Détection YARA : fichier rejeté"
     return None

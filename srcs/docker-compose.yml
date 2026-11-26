@@ -1,4 +1,53 @@
 services:
+  ollama:
+    image: ollama/ollama:0.40.18
+    restart: unless-stopped
+    environment:
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_NUM_PARALLEL: "1"
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "127.0.0.1:11434:11434"
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  ollama-init:
+    image: ollama/ollama:0.40.18
+    restart: "no"
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["ollama", "pull"]
+    command: ["${OLLAMA_MODEL:-qwen2.5:1.5b}"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+  cti-verify:
+    profiles: ["tools"]
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    build:
+      context: ./requirements/app
+      dockerfile: Dockerfile
+    working_dir: /app
+    command: ["python", "scripts/verify_cti_report.py"]
+    environment:
+      PYTHONPATH: /app
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b}
+      OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-180}
+      OLLAMA_NUM_CTX: "4096"
+      OLLAMA_NUM_PREDICT: "1024"
+      OLLAMA_TEMPERATURE: "0"
+    volumes:
+      - ./requirements/app:/app
+    depends_on:
+      ollama-init:
+        condition: service_completed_successfully
+
   cti-scraper:
     build:
       context: ./requirements/app
@@ -8,7 +57,8 @@ services:
     working_dir: /app
     command: ["python", "scripts/orchestrator.py", "--config", "config/conf.yaml", "--metrics", "data/health.json"]
     env_file:
-      - ../.env
+      - path: ../.env
+        required: false
     volumes:
       - ./requirements/app:/app
       - ./requirements/app/data:/app/data
@@ -19,6 +69,10 @@ services:
       - "host.docker.internal:host-gateway"
     environment:
       PYTHONPATH: /app
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://ollama:11434}
+    depends_on:
+      ollama-init:
+        condition: service_completed_successfully
 
   metrics:
     build:
@@ -29,7 +83,8 @@ services:
     working_dir: /app
     command: ["python", "scripts/metrics_server.py", "--file", "data/health.json", "--port", "9000"]
     env_file:
-      - ../.env
+      - path: ../.env
+        required: false
     volumes:
       - ./requirements/app/data:/app/data
     ports:
@@ -69,7 +124,8 @@ services:
     working_dir: /app
     command: ["sleep", "infinity"]
     env_file:
-      - ../.env
+      - path: ../.env
+        required: false
     volumes:
       - ./requirements/app:/app
       - ./requirements/app/data:/app/data
@@ -118,7 +174,8 @@ services:
     container_name: cti-alertmanager
     restart: unless-stopped
     env_file:
-      - ../.env
+      - path: ../.env
+        required: false
     ports:
       - "9093:9093"
     configs:
@@ -126,6 +183,7 @@ services:
         target: /etc/alertmanager/alertmanager.yml
 
 volumes:
+  ollama_data:
   pgdata:
   prometheus_data:
   grafana_data:

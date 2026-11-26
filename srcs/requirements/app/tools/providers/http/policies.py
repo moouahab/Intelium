@@ -1,6 +1,8 @@
 import time
 import threading
 import urllib.robotparser
+from dataclasses import replace
+from tools.providers.http.network import get_response
 from urllib.parse import urlparse
 from tools.providers.http.download_types import NetworkPolicy
 from tools.config.config_utils import to_int
@@ -12,7 +14,8 @@ class RobotsDelayPolicy:
     Thread-safe grâce à un verrou interne.
     """
 
-    def __init__(self, respect_robots: bool = True, default_delay: int = 0):
+    def __init__(self, respect_robots: bool = True, default_delay: int = 0, network_policy: NetworkPolicy | None = None):
+        self.network_policy = network_policy or NetworkPolicy()
         self.respect_robots = respect_robots
         self.default_delay = default_delay
         self._robots_cache: dict[str, urllib.robotparser.RobotFileParser] = {}
@@ -23,16 +26,31 @@ class RobotsDelayPolicy:
         respect = self.respect_robots if respect_override is None else respect_override
         if not respect:
             return True
-        host = urlparse(url).netloc
+        parsed = urlparse(url)
+        host = f"{parsed.scheme}://{parsed.netloc}"
         with self._lock:
             parser = self._robots_cache.get(host)
             if not parser:
                 rp = urllib.robotparser.RobotFileParser()
-                rp.set_url(f"https://{host}/robots.txt")
+                rp.set_url(f"{host}/robots.txt")
                 try:
-                    rp.read()
+                    response = get_response(rp.url, self.network_policy)
+                    try:
+                        if response.status_code in {401, 403}:
+                            rp.disallow_all = True
+                        elif response.status_code >= 400:
+                            rp.allow_all = True
+                        else:
+                            body = bytearray()
+                            for chunk in response.iter_content(chunk_size=8192):
+                                body.extend(chunk)
+                                if len(body) > 262144:
+                                    raise ValueError("robots.txt trop volumineux")
+                            rp.parse(body.decode("utf-8", errors="replace").splitlines())
+                    finally:
+                        response.close()
                 except Exception:
-                    rp = None
+                    rp.disallow_all = True
                 parser = rp
                 self._robots_cache[host] = parser
         if parser is None:
@@ -63,21 +81,4 @@ def policy_with_overrides(base_policy: NetworkPolicy, overrides: dict | None) ->
     max_bytes_int = to_int(max_bytes) if max_bytes is not None else base_policy.max_bytes
     timeout = overrides.get("request_timeout_seconds", base_policy.timeout)
     timeout_int = to_int(timeout, default=base_policy.timeout) or base_policy.timeout
-    # Conserve l'ensemble des garde-fous (TLS, sandbox, scan) et ne modifie que les champs overridables
-    return NetworkPolicy(
-        enforce_https=base_policy.enforce_https,
-        block_private=base_policy.block_private,
-        allow_domains=base_policy.allow_domains,
-        max_bytes=max_bytes_int,
-        timeout=timeout_int,
-        connect_timeout=base_policy.connect_timeout,
-        read_timeout=base_policy.read_timeout,
-        verify_ssl=base_policy.verify_ssl,
-        ca_bundle=base_policy.ca_bundle,
-        pinned_fingerprints=base_policy.pinned_fingerprints,
-        scanner=base_policy.scanner,
-        scan_command=base_policy.scan_command,
-        scan_timeout=base_policy.scan_timeout,
-        sanitize_downloads=base_policy.sanitize_downloads,
-        sandbox_dir=base_policy.sandbox_dir,
-    )
+    return replace(base_policy, max_bytes=max_bytes_int, timeout=timeout_int)

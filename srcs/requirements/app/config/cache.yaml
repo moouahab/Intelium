@@ -1,4 +1,5 @@
 cache:
+  max_age_seconds: 900   # rafraîchir les flux ; le mode offline permet la relecture historique
   file: data/cache.json
   auto_save: true
   per_site: true

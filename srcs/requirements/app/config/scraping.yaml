@@ -54,6 +54,9 @@ data_scraper:
     select_columns: []
     errors: "ignore"
 
+  stix:
+    max_description_chars: 1000
+
   image:
     ocr: true
     languages: ["eng", "fra"]  # langages Tesseract installés
@@ -71,6 +74,22 @@ data_scraper:
     reason: "This file is not relevant to threat intelligence collection."
 
   per_source:
+    CISA-KEV-CSV:
+      csv:
+        certkev: false  # conserver les lignes structurées sans extraits heuristiques ajoutés
+        record_format: json
+        sort_by: dateAdded
+        descending: true
+        max_rows: 200
+        select_columns: [cveID, vendorProject, product, vulnerabilityName, dateAdded, shortDescription, requiredAction, dueDate, knownRansomwareCampaignUse, notes]
+    FEODO-C2-CSV:
+      csv:
+        record_format: json
+        comment_prefix: "#"
+        sort_by: last_online
+        descending: true
+        max_rows: 100
+        select_columns: [first_seen_utc, dst_ip, dst_port, c2_status, last_online, malware]
     CERT-FR:
       html:
         certkev: true

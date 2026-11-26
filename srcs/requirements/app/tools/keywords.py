@@ -13,15 +13,19 @@ def find_keyword_hits(items: Iterable[str], keywords: Dict[str, List[str]]) -> D
     if not texts or not keywords:
         return hits
 
+    # Index each normalized term once, retaining its category and spelling.
+    # This avoids rescanning every text for terms shared across categories.
+    terms: dict[str, set[tuple[str, str]]] = {}
     for category, words in keywords.items():
-        found = set()
         for word in words or []:
             needle = (word or "").strip()
-            if not needle:
-                continue
-            lower = needle.lower()
-            if any(lower in text for text in texts):
-                found.add(needle)
-        if found:
-            hits[category] = sorted(found)
-    return hits
+            if needle:
+                terms.setdefault(needle.lower(), set()).add((category, needle))
+
+    found_by_category: dict[str, set[str]] = {}
+    for term, destinations in terms.items():
+        if any(term in text for text in texts):
+            for category, spelling in destinations:
+                found_by_category.setdefault(category, set()).add(spelling)
+    return {category: sorted(found_by_category[category])
+            for category in keywords if category in found_by_category}

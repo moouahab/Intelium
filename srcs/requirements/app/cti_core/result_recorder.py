@@ -52,6 +52,7 @@ class ResultRecorder:
             )
             if self.run_meta:
                 record.extra.update(self.run_meta)
+            record.extra.update(retrieved_at=cached_entry.date, content_sha256=cached_entry.hash)
             self.results.append(record)
             self.result_store.save(record.to_dict())
 
@@ -83,6 +84,7 @@ class ResultRecorder:
             )
             if self.run_meta:
                 record.extra.update(self.run_meta)
+            record.extra.update(retrieved_at=source.date, content_sha256=source.hash)
             self.results.append(record)
             self.result_store.save(record.to_dict())
 

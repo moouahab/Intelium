@@ -1,0 +1,12 @@
+requests
+PyYAML
+cryptography
+beautifulsoup4
+jsonpath-ng
+pdfplumber
+pillow
+pytesseract
+lxml
+pymongo
+hvac
+fpdf2

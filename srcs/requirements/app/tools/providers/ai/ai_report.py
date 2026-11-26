@@ -1,7 +1,4 @@
-"""
-Génération de rapport CTI via un LLM local en CLI.
-L'outil se contente de construire un prompt et d'appeler une commande locale (pas d'accès réseau).
-"""
+"""Rapports CTI via Ollama HTTP ou fournisseur CLI configuré."""
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -48,6 +45,9 @@ def generate_ai_report(
     if not ai_conf or not ai_conf.get("enabled"):
         return None
     results = normalize_results(results)
+    if ai_conf.get("provider") == "ollama" and provider is None:
+        from tools.providers.ai.ollama_provider import OllamaProvider
+        return OllamaProvider().generate(results, ai_conf, logger=logger)
     if provider:
         try:
             return provider.generate(results, ai_conf, logger=logger)

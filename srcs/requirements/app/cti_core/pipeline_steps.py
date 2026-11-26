@@ -16,6 +16,8 @@ _TEXT_TYPES = {"html", "api", "xml", "csv", "txt"}
 def enrich_results(results: List[ResultEntry], config_model) -> None:
     extractor = Extractor(config_model.scraping_settings, config_model.keywords)
     for res in results:
+        if res.get("status") not in {"downloaded", "skipped-cache"}:
+            continue
         extracted = res.get("extracted") or []
         keywords = res.get("keywords") or None
         if extracted and keywords:

@@ -1,35 +1,17 @@
 output:
   ai_report:
     enabled: true
-    mode: cli
-    langgraph_llm_command: ""
-    command: "python3 scripts/mistral_llm.py"
-    output: reports/rapport.md          # rapport IA fusionné dans le même fichier principal
-    timeout: 320                       # plus de temps pour finir le rapport
-    retries: 4
-    retry_delay: 5
-    prompt_template: ""                # utilise le template de prompt.yaml (ajusté)
-    prompt_path: config/prompt.yaml
-    required_sections:
-      - "Résumé executif"
-      - "Priorites"
-      - "Vulnerabilites"
-      - "IOCs"
-      - "Recommandations"
-    accept_incomplete: true
-    fill_missing_sections: true
-    restore_on_incomplete: false
-    pass_prompt_as_arg: false
-    prompt_via_file: true
-    # Limites pour éviter les prompts trop volumineux (ajustables si besoin)
-    max_results: 20
-    max_extracted_per_source: 16
-    max_extracted_chars: 800
-    fallback:
-      command: "python3 scripts/ollama_llm.py"
-      timeout: 260
-      pass_prompt_as_arg: false
-      prompt_via_file: true
+    provider: ollama
+    model: qwen2.5:1.5b
+    host: http://127.0.0.1:11434
+    output: reports/rapport_ia.md  # ne remplace jamais le rapport technique
+    timeout: 180
+    max_evidence: 6
+    evidence_per_source: 2
+    max_evidence_chars: 600
+    accept_incomplete: false
+    fill_missing_sections: false
+    restore_on_incomplete: true
     scoring:
       weights:
         malware: 30

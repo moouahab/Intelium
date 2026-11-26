@@ -6,9 +6,9 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Dépendances système (yara pour le scan optionnel)
+# Scan et OCR, avec les langues configurées dans scraping.yaml.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends yara \
+    && apt-get install -y --no-install-recommends yara tesseract-ocr tesseract-ocr-eng tesseract-ocr-fra \
     && rm -rf /var/lib/apt/lists/*
 
 # Dépendances Python

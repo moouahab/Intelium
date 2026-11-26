@@ -1,14 +1,17 @@
 PYTHON ?= python3
 PIP ?= $(PYTHON) -m pip
-PYTEST ?= PYTHONPATH=. pytest
+PYTEST ?= PYTHONPATH=. $(PYTHON) -m pytest
 CONFIG ?= config/conf.yaml
 
-.PHONY: all deps lint format test test-all run run-ai run-no-ai clean fclean re package
+.PHONY: all deps deps-dev lint format test test-all run run-ai run-no-ai clean fclean re package
 
-all: deps test
+all: deps-dev test
 
 deps:
 	$(PIP) install --quiet -r requirements.txt
+
+deps-dev:
+	$(PIP) install --quiet -r requirements-dev.txt
 
 lint:
 	$(PIP) install --quiet flake8
@@ -47,7 +50,7 @@ fclean: clean
 	# Archives/dist
 	rm -rf dist build
 
-re: clean deps test
+re: clean deps-dev test
 
 package:
 	mkdir -p dist

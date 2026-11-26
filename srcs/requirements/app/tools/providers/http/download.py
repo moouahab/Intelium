@@ -1,8 +1,8 @@
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 import mimetypes
 import tempfile
-import subprocess
 
 from tools.providers.http.download_types import DownloadResult, NetworkPolicy, StorageTarget
 from tools.providers.http import network
@@ -12,33 +12,69 @@ from tools.parsing.content_sanitizer import sanitize_html, sanitize_xml
 from tools.providers.http.scanner import run_scan
 
 
+@dataclass(frozen=True)
+class DownloadFormat:
+    extension: str
+    content_type: str
+    binary: bool = False
+
+
+DOWNLOAD_FORMATS = {
+    "html": DownloadFormat(".html", "text/html"),
+    "api": DownloadFormat(".json", "application/json"),
+    "stix": DownloadFormat(".json", "application/json"),
+    "xml": DownloadFormat(".xml", "application/xml"),
+    "pdf": DownloadFormat(".pdf", "application/pdf", binary=True),
+    "csv": DownloadFormat(".csv", "text/csv"),
+    "txt": DownloadFormat(".txt", "text/plain"),
+    "image": DownloadFormat(".bin", "application/octet-stream", binary=True),
+}
+SANITIZERS = {"html": sanitize_html, "xml": sanitize_xml}
+
+
 def _persist_content(
     storage: Optional[StorageTarget],
     extension: str,
     content: bytes,
     policy: NetworkPolicy,
 ) -> tuple[Optional[Path], Optional[str]]:
-    """
-    Écrit le contenu, vérifie la sandbox et lance un scan si configuré.
-    Retourne (saved_path, error_message).
-    """
-    saved = _save_content(storage, extension, content)
-    if saved and not _is_path_in_sandbox(saved, policy.sandbox_dir):
-        return saved, "Écriture hors sandbox interdite"
-    if saved and policy.scan_command:
-        error = run_scan(saved, policy.scan_command, timeout=policy.scan_timeout)
-        if error:
-            return saved, f"Scan échoué: {error}"
-    return saved, None
+    """Valide et scanne un fichier temporaire avant publication atomique.
 
-
-def _save_content(storage: Optional[StorageTarget], extension: str, content: bytes) -> Optional[Path]:
-    if not storage:
-        return None
-    path = storage.path_for(extension)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(content)
-    return path
+    Un contenu rejeté n'écrase jamais un artefact existant et n'expose aucun
+    saved_path aux étapes suivantes. Le scan s'applique aussi sans stockage.
+    """
+    if policy.max_bytes and len(content) > policy.max_bytes:
+        return None, "Téléchargement interrompu : taille > limite"
+    target = storage.path_for(extension) if storage else None
+    if target and not _is_path_in_sandbox(target, policy.sandbox_dir):
+        return None, "Écriture hors sandbox interdite"
+    if target is None and not policy.scan_command:
+        return None, None
+    pending = None
+    try:
+        if target is not None:
+            target = target.resolve()
+            target.parent.mkdir(parents=True, exist_ok=True)
+            directory = target.parent
+        else:
+            directory = Path(policy.sandbox_dir).resolve() if policy.sandbox_dir else None
+            if directory:
+                directory.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(dir=directory, prefix=".pending-", suffix=extension, delete=False) as handle:
+            pending = Path(handle.name)
+            handle.write(content)
+        if policy.scan_command:
+            error = run_scan(pending, policy.scan_command, timeout=policy.scan_timeout, scanner=policy.scanner)
+            if error:
+                return None, f"Scan échoué: {error}"
+        if target is not None:
+            pending.replace(target)
+        return target, None
+    except (OSError, ValueError) as exc:
+        return None, f"Écriture ou scan impossible: {exc}"
+    finally:
+        if pending is not None:
+            pending.unlink(missing_ok=True)
 
 
 def _is_path_in_sandbox(path: Path, sandbox: Optional[str]) -> bool:
@@ -104,32 +140,14 @@ def download_with_context(
         return DownloadResult(status="skipped", content=None)
 
     try:
-        policy = ctx.policy
-        timeout = (
-            (policy.connect_timeout, policy.read_timeout)
-            if policy.connect_timeout or policy.read_timeout
-            else policy.timeout
+        resp = network.get_response(
+            url, ctx.policy, headers=ctx.headers, proxies=ctx.proxy,
+            redirect_headers=ctx.redirect_headers,
         )
-        verify_opt = policy.ca_bundle if policy.ca_bundle else policy.verify_ssl
-        resp = network.requests.get(url, timeout=timeout, stream=True, headers=ctx.headers, proxies=ctx.proxy, verify=verify_opt)
         if resp.status_code >= 400:
             resp.close()
             return DownloadResult(status="http-error", content=None, error=f"HTTP {resp.status_code}", status_code=resp.status_code)
         resp.raise_for_status()
-        # Pinning fingerprint si demandé
-        if ctx.policy.pinned_fingerprints:
-            try:
-                cert = resp.raw.connection.sock.getpeercert(binary_form=True)  # type: ignore
-                import ssl
-                import hashlib
-
-                fp = hashlib.sha256(cert).hexdigest()
-                if fp not in ctx.policy.pinned_fingerprints:
-                    resp.close()
-                    return DownloadResult(status="error", content=None, error="Certificat TLS non autorisé (pinning)")
-            except Exception as exc:
-                resp.close()
-                return DownloadResult(status="error", content=None, error=f"Echec pinning TLS: {exc}")
     except Exception as exc:
         return DownloadResult(status="error", content=None, error=str(exc))
 
@@ -138,114 +156,43 @@ def download_with_context(
         resp.close()
         return _too_large_error(ctx.policy.max_bytes or 0)
 
-    content_bytes, truncated = _stream_content(resp, ctx.policy.max_bytes)
+    try:
+        content_bytes, truncated = _stream_content(resp, ctx.policy.max_bytes)
+    except Exception as exc:
+        return DownloadResult(status="error", content=None, error=f"Lecture HTTP interrompue: {exc}")
     size_bytes = len(content_bytes) if content_bytes else None
     if truncated:
         return _too_large_error(ctx.policy.max_bytes or 0)
     if content_bytes is None:
         return DownloadResult(status="error", content=None, error="Contenu vide ou non récupéré")
 
-    text_content = ensure_text(content_bytes, encoding=resp.encoding)
-    if stype == "html" or stype not in {"api", "xml", "pdf", "csv", "txt", "image"}:
-        saved, error = _persist_content(storage, ".html", content_bytes, ctx.policy)
-        if error:
-            return DownloadResult(status="error", content=None, error=error, saved_path=saved)
-        if ctx.policy.sanitize_downloads:
-            text_content = sanitize_html(text_content)
-        return DownloadResult(
-            status="downloaded",
-            content=text_content,
-            content_type=ctype or "text/html",
-            saved_path=saved,
-            status_code=resp.status_code,
-            size_bytes=size_bytes,
-        )
+    # Preserve the historical HTML fallback for unknown source types.
+    format_key = stype if stype in DOWNLOAD_FORMATS else "html"
+    download_format = DOWNLOAD_FORMATS[format_key]
+    if format_key == "api" and "json" not in ctype:
+        return DownloadResult(status="error", content=None, error=f"Type de contenu non supporté pour l'API: {ctype}")
 
-    if stype == "api":
-        if "json" not in ctype:
-            return DownloadResult(status="error", content=None, error=f"Type de contenu non supporté pour l'API: {ctype}")
-        saved, error = _persist_content(storage, ".json", content_bytes, ctx.policy)
-        if error:
-            return DownloadResult(status="error", content=None, error=error, saved_path=saved)
-        return DownloadResult(
-            status="downloaded",
-            content=text_content,
-            content_type=ctype or "application/json",
-            saved_path=saved,
-            status_code=resp.status_code,
-            size_bytes=size_bytes,
-        )
+    extension = download_format.extension
+    if format_key == "image":
+        extension = mimetypes.guess_extension(ctype.split(";")[0]) or extension
+    saved, error = _persist_content(storage, extension, content_bytes, ctx.policy)
+    if error:
+        return DownloadResult(status="error", content=None, error=error, saved_path=saved)
 
-    if stype == "xml":
-        saved, error = _persist_content(storage, ".xml", content_bytes, ctx.policy)
-        if error:
-            return DownloadResult(status="error", content=None, error=error, saved_path=saved)
-        if ctx.policy.sanitize_downloads:
-            text_content = sanitize_xml(text_content)
-        return DownloadResult(
-            status="downloaded",
-            content=text_content,
-            content_type=ctype or "application/xml",
-            saved_path=saved,
-            status_code=resp.status_code,
-            size_bytes=size_bytes,
-        )
-
-    if stype == "pdf":
-        saved, error = _persist_content(storage, ".pdf", content_bytes, ctx.policy)
-        if error:
-            return DownloadResult(status="error", content=None, error=error, saved_path=saved)
-        return DownloadResult(
-            status="downloaded",
-            content=content_bytes,
-            content_type=ctype or "application/pdf",
-            saved_path=saved,
-            status_code=resp.status_code,
-            size_bytes=size_bytes,
-        )
-
-    if stype == "csv":
-        saved, error = _persist_content(storage, ".csv", content_bytes, ctx.policy)
-        if error:
-            return DownloadResult(status="error", content=None, error=error, saved_path=saved)
-        return DownloadResult(
-            status="downloaded",
-            content=text_content,
-            content_type=ctype or "text/csv",
-            saved_path=saved,
-            status_code=resp.status_code,
-            size_bytes=size_bytes,
-        )
-
-    if stype == "txt":
-        saved, error = _persist_content(storage, ".txt", content_bytes, ctx.policy)
-        if error:
-            return DownloadResult(status="error", content=None, error=error, saved_path=saved)
-        return DownloadResult(
-            status="downloaded",
-            content=text_content,
-            content_type=ctype or "text/plain",
-            saved_path=saved,
-            status_code=resp.status_code,
-            size_bytes=size_bytes,
-        )
-
-    if stype == "image":
-        ext = mimetypes.guess_extension(ctype.split(";")[0]) if ctype else ".bin"
-        ext = ext or ".bin"
-        saved, error = _persist_content(storage, ext, content_bytes, ctx.policy)
-        if error:
-            return DownloadResult(status="error", content=None, error=error, saved_path=saved)
-        return DownloadResult(
-            status="downloaded",
-            content=content_bytes,
-            content_type=ctype or "application/octet-stream",
-            saved_path=saved,
-            status_code=resp.status_code,
-            size_bytes=size_bytes,
-        )
-
-    return DownloadResult(status="error", content=None, error="Type non supporté")
+    content = content_bytes
+    if not download_format.binary:
+        content = ensure_text(content_bytes, encoding=resp.encoding)
+        sanitizer = SANITIZERS.get(format_key)
+        if ctx.policy.sanitize_downloads and sanitizer:
+            content = sanitizer(content)
+    return DownloadResult(
+        status="downloaded",
+        content=content,
+        content_type=ctype or download_format.content_type,
+        saved_path=saved,
+        status_code=resp.status_code,
+        size_bytes=size_bytes,
+    )
 
 
 def download_source(

@@ -16,6 +16,7 @@ network:
     - securelist.com
     - www.exploit-db.com
     - otx.alienvault.com
+    - feodotracker.abuse.ch
     - raw.githubusercontent.com
     # - www.xmco.fr
   max_bytes: 5242880  # 5 MB par ressource pour accepter KEV volumineux

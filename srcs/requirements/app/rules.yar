@@ -21,8 +21,11 @@ rule Suspicious_Macro
         $autoopen = "AutoOpen" nocase
         $document = "ThisDocument" nocase
         $payload  = "Base64Decode" nocase
+        $vba_start = /^(\xef\xbb\xbf)?[ \t\r\n]*(Attribute VB_Name|Sub[ \t]+AutoOpen|Private[ \t]+Sub[ \t]+Document_Open)/ nocase
     condition:
-        2 of them
+        // Les descriptions CTI en JSON peuvent citer ces noms sans être du VBA.
+        (uint32(0) == 0xe011cfd0 or uint32(0) == 0x04034b50 or $vba_start)
+        and 2 of ($autoopen, $document, $payload)
 }
 
 rule Suspicious_Script_Tag
@@ -37,6 +40,7 @@ rule Suspicious_Script_Tag
         $unescape = "unescape(" nocase
         $fromchar = "fromCharCode" nocase
         $atob = "atob(" nocase
+        $markup_start = /^(\xef\xbb\xbf)?[ \t\r\n]*</
     condition:
-        $script and 1 of ($eval, $unescape, $fromchar, $atob)
+        $markup_start and $script and 1 of ($eval, $unescape, $fromchar, $atob)
 }

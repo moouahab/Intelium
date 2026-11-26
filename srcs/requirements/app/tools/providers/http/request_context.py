@@ -1,11 +1,10 @@
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Callable
 
 from tools.providers.http.download_types import NetworkPolicy
 from tools.auth import build_headers
 from tools.providers.http.policies import policy_with_overrides, RobotsDelayPolicy
 from tools.config.overrides import normalize_overrides, merge_headers
-from tools.logger_utils import mask_sensitive_headers
 
 
 @dataclass
@@ -15,6 +14,7 @@ class RequestContext:
     respect_robots: bool
     crawl_delay: int
     proxy: Optional[dict] = None
+    redirect_headers: Optional[Callable[[str], Dict[str, str]]] = None
 
 
 def build_request_context(
@@ -42,12 +42,14 @@ def build_request_context(
         override_headers=overrides.get("headers"),
         user_agent=overrides.get("user_agent") or default_user_agent,
     )
-    # On peut logger les headers masqués si besoin côté appelant
-    masked_headers = mask_sensitive_headers(headers)
+    def redirect_headers(target):
+        # Ne jamais recopier les secrets globaux ou les overrides de la source.
+        return build_headers(target, {"hosts": auth_conf.get("hosts", {})})
     return RequestContext(
         policy=policy,
         headers=headers,
         respect_robots=bool(respect_robots),
         crawl_delay=crawl_delay_int,
         proxy=proxy,
+        redirect_headers=redirect_headers,
     )

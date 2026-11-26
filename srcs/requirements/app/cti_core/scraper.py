@@ -17,6 +17,7 @@ from tools.quota import Quota
 from tools.providers.http.download_types import DownloadResult
 from tools.result_entry import ResultEntry
 from pathlib import Path
+from datetime import datetime, timezone
 
 
 class Scraper:
@@ -30,6 +31,7 @@ class Scraper:
     ):
         self.config_model = config_model
         self.cache = cache_manager
+        self.cache_max_age = getattr(config_model, "yaml_config", {}).get("cache", {}).get("max_age_seconds")
         self.results: list[ResultEntry] = []
         self.policy: NetworkPolicy = config_model.network_policy
         crawler_conf = config_model.crawler_settings
@@ -73,6 +75,7 @@ class Scraper:
         current.content = result.content
         if result.status == "downloaded":
             current.update_hash()
+            current.date = datetime.now(timezone.utc).isoformat()
 
         extracted: list[str] = []
         keyword_hits: dict = {}
@@ -105,7 +108,7 @@ class Scraper:
         state.mark_visited(current.url)
 
         cached = self.cache.get(current.url)
-        if cached and cached.status == "downloaded":
+        if cached and cached.status in {"downloaded", "skipped-cache"} and self._cache_is_fresh(cached):
             extracted, keyword_hits = self._parse_cached(current, cached)
             self.recorder.record_cache_hit(current, cached, extracted, keyword_hits)
             return
@@ -137,6 +140,19 @@ class Scraper:
             self.max_depth,
             self.url_policy,
         )
+
+    def _cache_is_fresh(self, entry) -> bool:
+        # Offline replay intentionally retains historical evidence.
+        if self.cache_max_age is None or getattr(self.policy, "offline", False):
+            return True
+        try:
+            fetched_at = datetime.fromisoformat(entry.date.replace("Z", "+00:00"))
+            if fetched_at.tzinfo is None:
+                fetched_at = fetched_at.replace(tzinfo=timezone.utc)
+            age = (datetime.now(timezone.utc) - fetched_at).total_seconds()
+            return 0 <= age < float(self.cache_max_age)
+        except (ValueError, TypeError, AttributeError):
+            return False
 
     def _worker_loop(self, state: CrawlerState):
         while True:

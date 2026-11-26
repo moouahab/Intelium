@@ -2,6 +2,8 @@
 
 Ce dépôt orchestre un agent CTI capable de collecter des sources (CERT/RSS/API/PDF/Images), d’analyser et de scorer les résultats, et de produire des rapports (Markdown/JSON/IA). Il embarque une stack Docker (scraper, IA CLI, métriques, Mongo, Vault, Prometheus, Grafana).
 
+Pour démarrer, lire le [guide d’utilisation](GUIDE_UTILISATION.md) : premier rapport, lecture des résultats, ajout de CSV, réglages Ollama et dépannage.
+
 ## Structure rapide
 - `Makefile` : cibles `run`, `test`, `build`, `init-vault`… (voir plus bas).
 - `srcs/docker-compose.yml` : services scraper/metrics/mongo/vault/prometheus/grafana.
@@ -13,7 +15,7 @@ Ce dépôt orchestre un agent CTI capable de collecter des sources (CERT/RSS/API
 1) `main.py` lit `config/conf.yaml` et inclut le reste (`network.yaml`, `crawler.yaml`, `sources.yaml`, `scraping.yaml`, `output.yaml`, `auth.yaml`, etc.).
 2) `cti_core/scraper.py` télécharge chaque source (BFS configurable), respecte robots/délais/allowlist, stocke sous `docs/<type>/...`, calcule un hash/cache, et passe le contenu aux parseurs.
 3) `tools/parsing/parser.py` route vers les parseurs (HTML/API/XML/CSV/TXT/PDF/OCR) avec options par type et par source, extraction IOC et sanitation optionnelles.
-4) `tools/report.py` génère les rapports Markdown/JSON, `tools/ai_report.py` peut appeler un LLM local (Mistral via CLI par défaut) pour synthèse CTI.
+4) `tools/reporting/report.py` génère les rapports Markdown/JSON ; le fournisseur Ollama produit une synthèse séparée avec preuves, contrôles qualité et archives.
 5) Résumé JSON affiché en fin de run (statut, chemin sauvegardé, extraits).
 6) Quotas globaux optionnels (`crawler.global_max_pages/max_total_bytes`) pour couper un run trop volumineux ; les sources restantes sont marquées `skipped-quota`.
 7) Parseur CERT/KEV contextuel : si le nom de source contient `cert`/`kev`/`cisa` (ou si `certkev: true` est activé dans `scraping.yaml`), le scraper extrait les CVE/CERTFR avec un extrait de contexte en plus des balises classiques.
@@ -58,12 +60,19 @@ python3 -m pytest -q                                # tests
 - `prompt.yaml` : templates de prompt IA réutilisables.
 - `cache.yaml` : backend fichier ou Mongo. Avec `backend: mongo` + `MONGO_URI`, le cache et les résultats (extraits/keywords/saved_path, y compris issus du cache) sont persistés dans Mongo.
 
-## IA (Mistral CLI)
-- Script conseillé : `python scripts/mistral_llm.py` (clé `MISTRAL_API_KEY`, modèle `MISTRAL_MODEL`).
-- `output.ai_report.enabled: true` pour activer la synthèse IA. Le prompt peut venir de `output.ai_report.prompt_template` ou `prompt_path`.
-- Fallback LangGraph (local) possible via `mode: langgraph` si configuré.
-- Fallback local rapide/gratuit : `scripts/ollama_llm.py` (Ollama). Configure `OLLAMA_MODEL` dans `.env` (ex: `llama3.2:3b` pour vitesse) et ajuste `OLLAMA_NUM_CTX`/`OLLAMA_NUM_PREDICT` pour limiter la latence.
-- En Docker, renseigne aussi `OLLAMA_HOST=http://host.docker.internal:11434` (ou l’URL de ton service Ollama) pour que le conteneur accède à Ollama.
+## IA locale et sources structurées
+
+Ollama est le fournisseur par défaut (`qwen2.5:1.5b`, configurable). Le rapport technique est conservé dans `reports/rapport.md` ; la synthèse est écrite dans `reports/rapport_ia.md`, accompagnée d’un fichier de contrôle qualité et d’archives par run.
+
+```bash
+make ollama-start   # démarre Ollama et télécharge le modèle
+make ollama-status  # attendre que le modèle soit disponible
+make verify-report  # collecte ciblée + rapport ; aucun email
+```
+
+Les nouveaux flux CISA KEV CSV, Feodo CSV et MITRE ATT&CK STIX apportent des champs structurés et un export des types d’attaque avec preuves. Une référence MITRE n’est pas une attaque observée ; les observations Feodo anciennes sont signalées.
+
+Voir [le guide Ollama CTI](srcs/requirements/app/docs/OLLAMA_CTI.md) pour les paramètres, les limites des contrôles, l’ajout de CSV et le rejeu des rapports. Le mode CLI Mistral reste disponible sur configuration explicite, sans fallback externe automatique du fournisseur Ollama.
 
 ## Parseurs et options
 - HTML : tags/CSS/XPath, `include_attributes`, sanitation optionnelle.
@@ -107,6 +116,7 @@ python3 -m pytest -q                                # tests
   output:
     ai_report:
       enabled: true
+      provider: cli  # choix explicite du fournisseur externe
       command: "python scripts/mistral_llm.py"
       output: reports/ai_report.md
       timeout: 120

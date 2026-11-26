@@ -7,6 +7,7 @@ from tools.parsers.csv_parser import parse_csv
 from tools.parsers.pdf_parser import parse_pdf
 from tools.parsers.ocr_parser import parse_image
 from tools.parsers.txt_parser import parse_txt
+from tools.parsers.stix_parser import parse_stix
 from tools.parsers.text_utils import ensure_text
 from tools.parsing.ioc_extractor import extract_iocs
 from tools.parsing.content_sanitizer import sanitize_html, sanitize_xml
@@ -23,6 +24,7 @@ PARSERS: dict[str, Callable[[Any, dict], List[str]]] = {
     "pdf": parse_pdf,
     "image": parse_image,
     "txt": parse_txt,
+    "stix": parse_stix,
 }
 
 
@@ -50,9 +52,7 @@ DEFAULT_PARSER_REGISTRY = ParserRegistry(PARSERS)
 
 def _merge_conf(base: dict, override: dict | None) -> dict:
     merged = deepcopy(base)
-    if override:
-        for k, v in override.items():
-            merged[k] = v
+    merged.update(override or {})
     return merged
 
 
@@ -92,15 +92,7 @@ def _post_process(results: List[str], conf: Dict[str, Any], source_name: str | N
     min_chars = conf.get("min_chars")
     if isinstance(min_chars, int) and min_chars > 0:
         results = [item for item in results if len(item) >= min_chars]
-    if conf.get("deduplicate", True):
-        seen = set()
-        deduped = []
-        for item in results:
-            if item in seen:
-                continue
-            seen.add(item)
-            deduped.append(item)
-        results = deduped
+    # _normalize_results already removes duplicates, ignoring case.
     max_items = conf.get("max_items")
     if isinstance(max_items, int) and max_items >= 0:
         results = results[:max_items]
@@ -186,7 +178,7 @@ def parse_content(
     try:
         results = parser_fn(content, type_conf)
         # Extraction CERT/KEV contextualisée si activée ou source identifiée comme telle
-        if type_conf.get("certkev") or is_certkev_source(source_name):
+        if type_conf.get("certkev", is_certkev_source(source_name)):
             cert_raw = raw_text_cache
             if cert_raw is None and isinstance(content, (bytes, str)):
                 cert_raw = ensure_text(content, encoding=type_conf.get("encoding"))

@@ -22,10 +22,10 @@ def _export_executive_summary(scored: List[Dict[str, Any]], path: Path) -> None:
         return f"- {name} ({status}) | CVE: {', '.join(cves) if cves else 'N/A'}"
 
     lines.append("## Priorité haute")
-    lines.extend(_brief(r) for r in high[:10] or ["- Aucune"])
+    lines.extend([_brief(r) for r in high[:10]] or ["- Aucune"])
     lines.append("")
     lines.append("## Priorité moyenne")
-    lines.extend(_brief(r) for r in medium[:10] or ["- Aucune"])
+    lines.extend([_brief(r) for r in medium[:10]] or ["- Aucune"])
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines))
 
@@ -49,7 +49,7 @@ def _export_ioc_table(scored: List[Dict[str, Any]], csv_path: Path, json_path: P
         )
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     with csv_path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["name", "url", "type", "status", "priority", "confidence", "iocs"])
+        writer = csv.DictWriter(f, fieldnames=["name", "url", "type", "status", "priority", "confidence", "score", "iocs"])
         writer.writeheader()
         writer.writerows(rows)
     json_path.parent.mkdir(parents=True, exist_ok=True)

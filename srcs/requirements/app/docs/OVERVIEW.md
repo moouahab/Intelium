@@ -45,23 +45,11 @@
         Authorization: "Bearer <token>"
   ```
 
-## Activer le rapport IA local
-- Dans `config/output.yaml` :
-  ```yaml
-  output:
-    ai_report:
-      enabled: true
-      command: "ollama run llama3"   # ou autre binaire local (llama.cpp, etc.)
-      output: reports/ai_report.md
-      timeout: 120
-      prompt_template: |
-        Tu es un analyste CTI. Résume et synthétise :
-        {results_json}
-      prompt_path: ""                 # optionnel, pour lire un template depuis un fichier
-  ```
-- Dans `config/prompt.yaml`, vous pouvez définir un template réutilisable, puis le référencer via `output.ai_report.prompt_path`.
-  ```
-- Le modèle est appelé en CLI locale (pas d’accès réseau). Le prompt peut être ajusté via `prompt_template` (`{results_json}` est remplacé par les données).
+## Rapport IA Ollama
+
+Le fournisseur par défaut est `provider: ollama`, avec le modèle configurable `qwen2.5:1.5b`. Depuis la racine, utiliser `make ollama-start`, attendre le modèle avec `make ollama-status`, puis `make verify-report` pour une vérification sans email.
+
+Le rapport technique et la synthèse IA restent séparés. Chaque synthèse conserve ses preuves, sa requête/réponse et un contrôle qualité. Les sources structurées CISA KEV CSV, Feodo CSV et MITRE ATT&CK STIX alimentent une cartographie des types d’attaque. Voir [OLLAMA_CTI.md](OLLAMA_CTI.md) pour les limites, les variables et le rejeu.
 
 ## Configs clés
 - `config/sources.yaml` : sources CTI (CERT-FR, CISA KEV, RSS Talos/NCSC/HackerNews/SecurityWeek, CVE sample, OTX).
@@ -70,7 +58,7 @@
 - `config/scraping.yaml` : règles d’extraction par type (HTML tags, API JSONPath, XML tags, PDF/CSV/image/TXT options).
 - `config/cache.yaml` : fichier cache, auto_save, `per_site` (fichiers par domaine).
 - `config/logging.yaml` : niveau, fichier log (rotation), console.
-- `config/output.yaml` : format rapport, chemin principal, split_per_source/detail_dir, langue. Bloc `ai_report` activé par défaut en mode LangGraph : `mode`, `langgraph_llm_command` (ex: `codex exec --skip-git-repo-check` ou autre CLI locale), `command` (fallback CLI), `output`, `timeout`, `prompt_template` (texte où `{results_json}` est remplacé par les données) ou `prompt_path` pour lire un template depuis un fichier, `pass_prompt_as_arg` et `prompt_via_file` (pour passer le prompt via stdin/fichier). Auto-détection couvre : ollama, llama/llama.cpp, codex, copilot, code.
+- `config/output.yaml` : format rapport, chemin principal, split_per_source/detail_dir, langue. Bloc `ai_report` activé par défaut avec Ollama (voir le guide dédié). Pour les fournisseurs CLI historiques : `mode`, `langgraph_llm_command` (ex: `codex exec --skip-git-repo-check` ou autre CLI locale), `command` (fallback CLI), `output`, `timeout`, `prompt_template` (texte où `{results_json}` est remplacé par les données) ou `prompt_path` pour lire un template depuis un fichier, `pass_prompt_as_arg` et `prompt_via_file` (pour passer le prompt via stdin/fichier). Auto-détection couvre : ollama, llama/llama.cpp, codex, copilot, code.
 - Overrides par source (via `sources.yaml`) : bloc `overrides` pour `max_bytes`, `respect_robots`, `crawl_delay_seconds` (voir normalisation dans `sources_factory.normalize_overrides`).
 - Normalisation URL : `crawler.url_normalizer` (`strip` par défaut, options `lower`, `strip-lower`).
 

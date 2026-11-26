@@ -3,7 +3,7 @@ import time
 import threading
 from contextlib import contextmanager
 
-from tools.providers.http.download import download_with_context
+from tools.providers.http.download import download_with_context, _persist_content, _too_large_error
 from tools.providers.http.download_types import DownloadResult, NetworkPolicy, StorageTarget
 from tools.providers.http.network import validate_url
 from tools.providers.http.policies import RobotsDelayPolicy
@@ -39,7 +39,7 @@ class HttpClient:
     ):
         self.policy = policy
         self.auth_conf = auth_conf or {}
-        self._robots_delay = RobotsDelayPolicy(respect_robots=respect_robots, default_delay=crawl_delay)
+        self._robots_delay = RobotsDelayPolicy(respect_robots=respect_robots, default_delay=crawl_delay, network_policy=policy)
         self.retries = max(0, int(retries))
         self.backoff_seconds = float(backoff_seconds)
         self.user_agent = user_agent
@@ -97,6 +97,13 @@ class HttpClient:
     def _run_headless(self, url: str, ctx, storage: Optional[StorageTarget]) -> DownloadResult | None:
         if not self.headless_strategy:
             return None
+        # Les stratégies navigateur actuelles ne contrôlent pas les sous-requêtes.
+        # Avec une politique réseau restrictive, conserver le transport HTTP validé.
+        if (ctx.policy.enforce_https or ctx.policy.block_private or ctx.policy.allow_domains
+                or ctx.policy.pinned_fingerprints):
+            if self.logger:
+                self.logger.warning("Headless non isolé : utilisation du transport HTTP contrôlé.")
+            return None
         html = self.headless_strategy.fetch(
             url,
             timeout=ctx.policy.timeout,
@@ -105,12 +112,16 @@ class HttpClient:
         )
         if not html:
             return None
-        saved = None
-        if storage:
-            saved = storage.path_for(".html")
-            saved.parent.mkdir(parents=True, exist_ok=True)
-            saved.write_text(html)
-        return DownloadResult(status="downloaded", content=html, content_type="text/html", saved_path=saved, status_code=200)
+        content = html.encode("utf-8")
+        if ctx.policy.max_bytes and len(content) > ctx.policy.max_bytes:
+            return _too_large_error(ctx.policy.max_bytes)
+        saved, error = _persist_content(storage, ".html", content, ctx.policy)
+        if error:
+            return DownloadResult(status="error", content=None, error=error)
+        if ctx.policy.sanitize_downloads:
+            from tools.parsing.content_sanitizer import sanitize_html
+            html = sanitize_html(html)
+        return DownloadResult(status="downloaded", content=html, content_type="text/html", saved_path=saved, status_code=200, size_bytes=len(content))
 
     def _fetch_with_retries(self, url: str, source: dict, ctx, storage: Optional[StorageTarget]) -> DownloadResult:
         attempt = 0

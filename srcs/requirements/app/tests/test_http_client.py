@@ -184,7 +184,7 @@ def test_http_client_enforces_max_bytes_stream(monkeypatch):
         def close(self):
             self.closed = True
 
-    def fake_get(url, timeout=10, stream=True, headers=None, proxies=None, verify=True):
+    def fake_get(url, timeout=10, stream=True, headers=None, proxies=None, verify=True, allow_redirects=False):
         return FakeResponse(b"a" * 10)
 
     monkeypatch.setattr(download_module.network.requests, "get", fake_get)

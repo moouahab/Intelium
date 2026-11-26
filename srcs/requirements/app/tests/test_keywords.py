@@ -19,3 +19,15 @@ def test_find_keyword_hits_handles_noise_and_case():
 
     assert set(hits["indicator"]) == {"domain", "IoC"}
     assert "misc" not in hits
+
+
+def test_shared_terms_preserve_categories_spelling_and_order():
+    keywords = {
+        "second": [" IOC ", "ioc", "IOC", "", None],
+        "first": ["IOC", "missing"],
+        "empty": None,
+        "boundary": ["ab"],
+    }
+    hits = find_keyword_hits(iter(["An ioc", "a", "b", None]), keywords)
+    assert hits == {"second": ["IOC", "ioc"], "first": ["IOC"]}
+    assert list(hits) == ["second", "first"]

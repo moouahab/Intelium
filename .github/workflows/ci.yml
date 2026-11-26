@@ -12,6 +12,9 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.14"]
     defaults:
       run:
         working-directory: srcs/requirements/app
@@ -22,7 +25,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
           cache: "pip"
           cache-dependency-path: |
             srcs/requirements/app/requirements.txt
@@ -39,6 +42,7 @@ jobs:
         run: python -m pytest -q
 
       - name: Ensure .env is not committed
+        working-directory: .
         run: |
           if git ls-files -z | tr '\0' '\n' | grep -qx '.env'; then
             echo "ERROR: .env is committed. Remove it from the repo."

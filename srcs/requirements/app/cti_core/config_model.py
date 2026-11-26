@@ -16,7 +16,7 @@ from tools.config.config_validator import validate_config
 from tools.config.overrides import normalize_overrides
 
 
-SUPPORTED_SOURCE_TYPES = {"html", "api", "xml", "pdf", "csv", "txt", "image", "ignore"}
+SUPPORTED_SOURCE_TYPES = {"html", "api", "xml", "pdf", "csv", "txt", "image", "stix", "ignore"}
 
 
 class ConfigModel:
@@ -79,7 +79,12 @@ class ConfigModel:
 
         if sandbox_resolved in base_resolved.parents or base_resolved == sandbox_resolved:
             return base_dir
-        return sandbox_resolved / base_dir
+        if base_dir.is_absolute():
+            raise ValueError("base_dir absolu hors sandbox interdit")
+        relocated = (sandbox_resolved / base_dir).resolve()
+        if sandbox_resolved not in relocated.parents and relocated != sandbox_resolved:
+            raise ValueError("base_dir hors sandbox interdit")
+        return relocated
 
     def build_storage_target(self, source: Source) -> StorageTarget:
         base_dir = self._resolve_base_dir()

@@ -1,4 +1,19 @@
 sources:
+  # Feeds structurés prioritaires : chargés avant les crawls HTML.
+  - url: https://raw.githubusercontent.com/cisagov/kev-data/main/known_exploited_vulnerabilities.csv
+    type: csv
+    name: CISA-KEV-CSV
+
+  - url: https://feodotracker.abuse.ch/downloads/ipblocklist.csv
+    type: csv
+    name: FEODO-C2-CSV
+
+  - url: https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack.json
+    type: stix
+    name: MITRE-ATTACK-ENTERPRISE
+    overrides:
+      max_bytes: 67108864
+
   - url: https://www.cert.ssi.gouv.fr/alerte/
     type: html
     name: CERT-FR

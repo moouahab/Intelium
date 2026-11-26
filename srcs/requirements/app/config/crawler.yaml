@@ -3,7 +3,7 @@ crawler:
   max_pages: 100      # limite de pages par source pour éviter l'explosion
   # Quotas globaux (toutes sources)
   max_total_pages: 300
-  max_total_bytes: 20000000  # 20 MB
+  max_total_bytes: 100000000  # 100 MB, inclut le référentiel ATT&CK
   same_domain_only: true
   allow_domains: []   # facultatif, sinon reuse allowlist réseau
   respect_robots: true
